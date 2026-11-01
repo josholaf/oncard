@@ -68,8 +68,15 @@ class Flashcard {
 
   factory Flashcard.fromJson(Map<String, dynamic> json) {
     final stability = (json['stability'] as num?)?.toDouble();
-    // Migrate v1 data, which only stored a 0..5 mastery score.
-    final double migrated = stability ?? ((json['mastery'] as int?) ?? 0) * 4.2;
+    // Migrate v1 data, which only stored a 0..5 mastery score. Old mastery
+    // 4+ counted as mastered, so it maps to a clean 21-day stability.
+    final double migrated;
+    if (stability != null) {
+      migrated = stability;
+    } else {
+      final oldMastery = (json['mastery'] as int?) ?? 0;
+      migrated = oldMastery >= 4 ? 21.0 : oldMastery * 4.2;
+    }
     return Flashcard(
       id: json['id'] as String,
       question: json['question'] as String,
