@@ -129,10 +129,10 @@ class HomeScreen extends StatelessWidget {
 
     Widget quickStart;
     if (due == null) {
-      quickStart = const FilledButton.icon(
+      quickStart = FilledButton.icon(
         onPressed: null,
-        icon: Icon(Icons.play_arrow),
-        label: Text('All caught up'),
+        icon: const Icon(Icons.play_arrow),
+        label: const Text('All caught up'),
       );
     } else {
       final Deck deck = due;
@@ -140,7 +140,7 @@ class HomeScreen extends StatelessWidget {
         onPressed: () => Navigator.push(context,
             MaterialPageRoute<void>(builder: (_) => StudyScreen(deck: deck))),
         icon: const Icon(Icons.play_arrow),
-        label: Text('Quick start: ' + deck.name),
+        label: Text('Quick start: ${deck.name}'),
       );
     }
 
@@ -169,7 +169,7 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(data.streak.toString() + ' day streak',
+                      Text('${data.streak} day streak',
                           style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 4),
                       const Text(
@@ -254,10 +254,7 @@ class LibraryScreen extends StatelessWidget {
 
   String _label(Deck deck) {
     final mastered = deck.cards.where((c) => c.mastered).length;
-    return mastered.toString() +
-        ' / ' +
-        deck.cards.length.toString() +
-        ' mastered';
+    return '$mastered / ${deck.cards.length} mastered';
   }
 
   void _openDeck(BuildContext context, String id) {
@@ -461,10 +458,7 @@ class DeckScreen extends StatelessWidget {
 
   String _masteredLabel(Deck deck) {
     final mastered = deck.cards.where((c) => c.mastered).length;
-    return mastered.toString() +
-        ' / ' +
-        deck.cards.length.toString() +
-        ' cards mastered';
+    return '$mastered / ${deck.cards.length} cards mastered';
   }
 
   Future<void> _confirmDelete(BuildContext context, AppData data) async {
@@ -845,10 +839,7 @@ class _StudyScreenState extends State<StudyScreen>
               Text('Session complete',
                   style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
-              Text('Known ' +
-                  _known.toString() +
-                  ' · Again ' +
-                  _again.toString()),
+              Text('Known $_known · Again $_again'),
               const SizedBox(height: 24),
               FilledButton(
                   onPressed: () => Navigator.pop(context),
@@ -874,11 +865,7 @@ class _StudyScreenState extends State<StudyScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-                'Card ' +
-                    (_index + 1).toString() +
-                    ' of ' +
-                    total.toString(),
+            Text('Card ${_index + 1} of $total',
                 style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
             LinearProgressIndicator(value: _index / total),
@@ -985,9 +972,7 @@ Future<void> importCsv(
   data.addCards(deckId, cards);
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Imported ' +
-            cards.length.toString() +
-            ' cards into this deck.')));
+        content: Text('Imported ${cards.length} cards into this deck.')));
   }
 }
 
@@ -999,7 +984,7 @@ Future<void> exportCsv(BuildContext context, Deck deck) async {
   }
   final dir = await getApplicationDocumentsDirectory();
   final safeName = deck.name.replaceAll(RegExp('[^A-Za-z0-9_-]'), '_');
-  final file = File(dir.path + '/oncard_' + safeName + '.csv');
+  final file = File('${dir.path}/oncard_$safeName.csv');
   final rows = <List<String>>[
     <String>['question', 'answer', 'note', 'tags'],
     for (final c in deck.cards)
@@ -1008,7 +993,7 @@ Future<void> exportCsv(BuildContext context, Deck deck) async {
   await file.writeAsString(const ListToCsvConverter().convert(rows));
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported to ' + file.path)));
+        SnackBar(content: Text('Exported to ${file.path}')));
   }
 }
 

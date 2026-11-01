@@ -21,11 +21,7 @@ class AppData extends ChangeNotifier {
   }
 
   static String _dayKey(DateTime d) =>
-      d.year.toString() +
-      '-' +
-      d.month.toString().padLeft(2, '0') +
-      '-' +
-      d.day.toString().padLeft(2, '0');
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   void _load() {
     final raw = _prefs.getString('oncard.decks');
