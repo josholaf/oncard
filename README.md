@@ -16,6 +16,16 @@ Beautiful offline-first flashcard app built with **Flutter** — single codebase
 - **Offline-first** — SharedPreferences persistence
 - Sample decks: Anaesthesia Basics, Medical Physiology, Programming (Dart), French, Japanese, Agriculture
 
+## CSV format
+
+Rows with a `question` / `answer` header are detected and skipped. Columns are, in order:
+
+```
+question,answer,note,tags
+```
+
+Separate multiple tags with `;`. The note and tags columns are optional.
+
 ## Run / Build for Android
 
 ```bash
@@ -38,7 +48,11 @@ Install the APK on your phone (enable “Install from unknown sources” if need
 ## Project structure
 
 ```
-lib/main.dart          # Full app (models, state, screens, theme)
+lib/main.dart          # App bootstrap, Material 3 theme, Provider wiring
+lib/models.dart        # Deck + Flashcard domain model, JSON serialization
+lib/app_data.dart      # AppData state: decks, streak, theme mode, persistence
+lib/sample_decks.dart  # Starter decks seeded on first run
+lib/screens.dart       # Home, Library, Deck, Study, Create Card, Import, Settings
 pubspec.yaml
 ```
 
