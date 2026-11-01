@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'app_data.dart';
@@ -149,11 +151,8 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        data.streak.toString() +
-                            (data.streak == 1 ? ' day streak' : ' day streak'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      Text(data.streak.toString() + ' day streak',
+                          style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 4),
                       const Text(
                           'Keep it alive. Study at least one card today.'),
@@ -497,6 +496,11 @@ class DeckScreen extends StatelessWidget {
             onPressed: () => importCsv(context, data, deckId),
           ),
           IconButton(
+            tooltip: 'Export CSV',
+            icon: const Icon(Icons.file_download),
+            onPressed: () => exportCsv(context, deck),
+          ),
+          IconButton(
             tooltip: 'Delete deck',
             icon: const Icon(Icons.delete_outline),
             onPressed: () => _confirmDelete(context, data),
@@ -574,7 +578,36 @@ class DeckScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis),
                           subtitle: Text(card.answer,
                               maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: MasteryDots(card.mastery),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              MasteryDots(card.mastery),
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute<void>(
+                                            builder: (_) => CreateCardScreen(
+                                                deckId: deckId,
+                                                card: card)));
+                                  } else if (value == 'delete') {
+                                    data.deleteCard(deckId, card.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text('Card deleted')));
+                                  }
+                                },
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(
+                                      value: 'edit', child: Text('Edit')),
+                                  PopupMenuItem(
+                                      value: 'delete', child: Text('Delete')),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -588,7 +621,8 @@ class DeckScreen extends StatelessWidget {
 
 class CreateCardScreen extends StatefulWidget {
   final String deckId;
-  const CreateCardScreen({super.key, required this.deckId});
+  final Flashcard? card;
+  const CreateCardScreen({super.key, required this.deckId, this.card});
 
   @override
   State<CreateCardScreen> createState() => _CreateCardScreenState();
@@ -596,9 +630,14 @@ class CreateCardScreen extends StatefulWidget {
 
 class _CreateCardScreenState extends State<CreateCardScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _question = TextEditingController();
-  final _answer = TextEditingController();
-  final _note = TextEditingController();
+  late final TextEditingController _question =
+      TextEditingController(text: widget.card?.question ?? '');
+  late final TextEditingController _answer =
+      TextEditingController(text: widget.card?.answer ?? '');
+  late final TextEditingController _note =
+      TextEditingController(text: widget.card?.note ?? '');
+
+  bool get _isEditing => widget.card != null;
 
   @override
   void dispose() {
@@ -610,22 +649,32 @@ class _CreateCardScreenState extends State<CreateCardScreen> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<AppData>().addCard(
-          widget.deckId,
-          Flashcard(
-            id: uuid.v4(),
+    if (_isEditing) {
+      context.read<AppData>().updateCard(
+            widget.deckId,
+            widget.card!.id,
             question: _question.text.trim(),
             answer: _answer.text.trim(),
             note: _note.text.trim(),
-          ),
-        );
+          );
+    } else {
+      context.read<AppData>().addCard(
+            widget.deckId,
+            Flashcard(
+              id: uuid.v4(),
+              question: _question.text.trim(),
+              answer: _answer.text.trim(),
+              note: _note.text.trim(),
+            ),
+          );
+    }
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New card')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit card' : 'New card')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -664,7 +713,7 @@ class _CreateCardScreenState extends State<CreateCardScreen> {
             FilledButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.check),
-              label: const Text('Save card'),
+              label: Text(_isEditing ? 'Save changes' : 'Save card'),
             ),
           ],
         ),
@@ -928,6 +977,27 @@ Future<void> importCsv(
         content: Text('Imported ' +
             cards.length.toString() +
             ' cards into this deck.')));
+  }
+}
+
+Future<void> exportCsv(BuildContext context, Deck deck) async {
+  if (deck.cards.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to export yet.')));
+    return;
+  }
+  final dir = await getApplicationDocumentsDirectory();
+  final safeName = deck.name.replaceAll(RegExp('[^A-Za-z0-9_-]'), '_');
+  final file = File(dir.path + '/oncard_' + safeName + '.csv');
+  final rows = <List<String>>[
+    <String>['question', 'answer', 'note', 'tags'],
+    for (final c in deck.cards)
+      <String>[c.question, c.answer, c.note, c.tags.join(';')],
+  ];
+  await file.writeAsString(const ListToCsvConverter().convert(rows));
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported to ' + file.path)));
   }
 }
 

@@ -96,6 +96,28 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateCard(String deckId, String cardId,
+      {required String question, required String answer, String note = ''}) {
+    final deck = deckById(deckId);
+    if (deck == null) return;
+    for (final card in deck.cards) {
+      if (card.id == cardId) {
+        card.question = question;
+        card.answer = answer;
+        card.note = note;
+        break;
+      }
+    }
+    _save();
+    notifyListeners();
+  }
+
+  void deleteCard(String deckId, String cardId) {
+    deckById(deckId)?.cards.removeWhere((c) => c.id == cardId);
+    _save();
+    notifyListeners();
+  }
+
   void recordReview(String deckId, String cardId, bool knew) {
     final deck = deckById(deckId);
     if (deck == null) return;
