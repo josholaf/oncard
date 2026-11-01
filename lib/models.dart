@@ -44,12 +44,13 @@ class Flashcard {
   /// A card counts as mastered once it survives three weeks without review.
   bool get mastered => stability >= 21;
 
-  /// 0..5 dots for compact UI indicators.
+  /// 0..5 dots for compact UI indicators. Migrated cards can carry real
+  /// stability without recorded reps, so zero reps alone must not hide it.
   int get masteryDots {
-    if (reps == 0) return 0;
+    if (reps == 0 && stability <= 0) return 0;
     if (mastered) return 5;
     final dots = (stability / 21 * 5).ceil();
-    return dots.clamp(1, 5);
+    return dots.clamp(1, 5).toInt();
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
