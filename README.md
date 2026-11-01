@@ -2,40 +2,41 @@
 
 **Study smarter, remember longer.**
 
-Beautiful offline-first flashcard app built with **Flutter** — single codebase for **Android, iOS, Web, Windows, macOS & Linux**.
+A beautiful, offline-first flashcard app with real spaced repetition. Built with Flutter for Android (and ready for iOS, Web and Desktop).
 
-## Features
+## What's inside (v2.0)
 
-- **Home** — Streak tracker, Quick Start, My Decks, motivational quote
-- **Library** — All Decks, progress %, add deck with icon & color picker
-- **Deck view** — Card list with mastery dots, edit / delete cards, import & export CSV, delete deck
-- **Study mode** — Smooth flip cards, Know / Again, notes, related topics, mastery tracking, session summary
-- **Create / Edit Card** — Question, Answer, optional Note
-- **Import from CSV** — Pick CSV with Question / Answer / Note / Tags columns
-- **Export to CSV** — Save any deck back out as CSV
-- **Icon Picker** — Colorful icon grid for decks
-- **Dark mode** — Light / Dark / System (Settings → Appearance)
-- **Offline-first** — SharedPreferences persistence
-- Sample decks: Anaesthesia Basics, Medical Physiology, Programming (Dart), French, Japanese, Agriculture
+- **Home dashboard** — greeting, due/new summary, one-tap "Start studying", streak and daily-goal progress, recently studied decks
+- **Library** — search, favorites, sorting (name / recently studied / progress), grid or list view
+- **Spaced repetition scheduler** — Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors (FSRS-inspired, fully offline)
+- **Three study modes** — flip cards with 3D animation, multiple-choice quiz, type-the-answer
+- **Image flashcards** — attach a picture to any card (great for anatomy, diagrams, maps)
+- **Text to speech** — optional read-aloud for questions and answers (Settings → Study)
+- **Statistics** — weekly activity chart, accuracy, cards learned, due-tomorrow preview, 12-week study heatmap
+- **Card editor** — front/back, note, tags, image attachment, preview before saving
+- **Import / export** — CSV and TSV import, CSV export per deck, full JSON backup and restore
+- **Goals** — configurable daily card goal
+- **Themes** — warm paper light theme, charcoal dark theme, system default
+- **Offline-first** — everything is stored on-device; no account, no network required, no ads
 
 ## Test APK
 
-Every push to main builds a release APK with GitHub Actions. Download it from the [Actions tab](https://github.com/josholaf/oncard/actions) — open the latest "Build APK" run and grab the `oncard-release-apk` artifact. Install it on your phone with "Install from unknown sources" enabled.
+Every push to `main` builds a release APK with GitHub Actions. Tagged versions (`v*`) also publish a GitHub Release with the APK attached. See [Releases](https://github.com/josholaf/oncard/releases).
 
-## CSV format
+## CSV / TSV format
 
-Rows with a `question` / `answer` header are detected and skipped. Columns are, in order:
+Rows with a `question` / `answer` header are detected and skipped. Columns, in order:
 
 ```
 question,answer,note,tags
 ```
 
-Separate multiple tags with `;`. The note and tags columns are optional.
+Separate multiple tags with `;`. The note and tags columns are optional. TSV files use the same columns separated by tabs.
 
 ## Run / Build locally
 
 ```bash
-# Prerequisites: Flutter 3.24+ installed
+# Prerequisites: Flutter 3.24+
 git clone https://github.com/josholaf/oncard.git
 cd oncard
 flutter pub get
@@ -54,18 +55,26 @@ flutter build apk --release
 ## Project structure
 
 ```
-lib/main.dart          # App bootstrap, Material 3 theme, Provider wiring
-lib/models.dart        # Deck + Flashcard domain model, JSON serialization
-lib/app_data.dart      # AppData state: decks, streak, theme mode, persistence
-lib/sample_decks.dart  # Starter decks seeded on first run
-lib/screens.dart       # Home, Library, Deck, Study, Create Card, Import/Export, Settings
-test/models_test.dart  # Round-trip and progress tests
-pubspec.yaml
+lib/main.dart                 # App bootstrap, Inter theming, 5-tab shell
+lib/models.dart               # Flashcard (content + review state), Deck, DayLog
+lib/scheduler.dart            # Spaced-repetition scheduler (Again/Hard/Good/Easy)
+lib/app_data.dart             # AppData: decks, goals, streak, history, backup
+lib/theme.dart                # Palette and light/dark Material 3 themes
+lib/widgets.dart              # Mastery dots, badges, stat cards, deck avatars
+lib/import_export.dart        # CSV/TSV import, CSV export, JSON backup/restore
+lib/sample_decks.dart         # Starter decks seeded on first run
+lib/screens/                  # home, library, create, deck, editor, study, stats, settings
+test/models_test.dart         # Model, migration and scheduler tests
+test/widget_test.dart          # App smoke test
 ```
+
+## Scheduling model
+
+Card content (question, answer, note, tags, image) is stored separately from review state (due date, stability, ease, reps, lapses). Stability is the number of days a memory is expected to survive; it grows multiplicatively on Good/Easy and collapses on Again. A card counts as mastered once its stability reaches 21 days, but it keeps resurfacing for long-term review. All scheduling is deterministic and runs on-device.
 
 ## Tech
 
-Flutter • Dart • Provider • SharedPreferences • Google Fonts (Inter) • Material 3
+Flutter • Dart • Provider • SharedPreferences • Google Fonts (Inter) • image_picker • flutter_tts • Material 3
 
 ## License
 

@@ -4,7 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_data.dart';
-import 'screens.dart';
+import 'screens/create_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/library_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/stats_screen.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,17 +35,10 @@ class OncardApp extends StatelessWidget {
       create: (_) => AppData(prefs),
       child: Consumer<AppData>(
         builder: (context, data, _) {
-          final light = ThemeData(
-            useMaterial3: true,
-            colorSchemeSeed: const Color(0xFF6750A4),
-            textTheme: _inter(ThemeData.light().textTheme),
-          );
-          final dark = ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            colorSchemeSeed: const Color(0xFF6750A4),
-            textTheme: _inter(ThemeData.dark().textTheme),
-          );
+          final light =
+              buildLightTheme(_inter(ThemeData.light().textTheme));
+          final dark =
+              buildDarkTheme(_inter(ThemeData.dark().textTheme));
           return MaterialApp(
             title: 'Oncard',
             debugShowCheckedModeBanner: false,
@@ -50,6 +48,57 @@ class OncardApp extends StatelessWidget {
             home: const RootShell(),
           );
         },
+      ),
+    );
+  }
+}
+
+class RootShell extends StatefulWidget {
+  const RootShell({super.key});
+
+  @override
+  State<RootShell> createState() => _RootShellState();
+}
+
+class _RootShellState extends State<RootShell> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = <Widget>[
+      const HomeScreen(),
+      const LibraryScreen(),
+      const CreateScreen(),
+      const StatsScreen(),
+      const SettingsScreen(),
+    ];
+    return Scaffold(
+      body: SafeArea(child: pages[_index]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.library_books_outlined),
+              selectedIcon: Icon(Icons.library_books_rounded),
+              label: 'Library'),
+          NavigationDestination(
+              icon: Icon(Icons.add_circle_outline),
+              selectedIcon: Icon(Icons.add_circle_rounded),
+              label: 'Create'),
+          NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights_rounded),
+              label: 'Stats'),
+          NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Settings'),
+        ],
       ),
     );
   }
