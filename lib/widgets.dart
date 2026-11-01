@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_data.dart';
+import 'models.dart';
 import 'theme.dart';
 
 /// Five small dots showing how deep a card's memory trace is.
@@ -143,6 +145,156 @@ class DeckAvatar extends StatelessWidget {
       radius: size / 2,
       backgroundColor: deckPalette[colorIndex % deckPalette.length],
       child: Text(icon, style: TextStyle(fontSize: size * 0.45)),
+    );
+  }
+}
+
+/// GitHub-style contribution heatmap of study activity.
+///
+/// Columns are weeks (most recent on the right), rows are weekdays, cells
+/// are colored in five steps from none to full intensity. Month labels sit
+/// above the grid and a Less/More legend below it.
+class StudyHeatmap extends StatelessWidget {
+  final Map<String, DayLog> byDate;
+
+  /// How many week columns to show, counting back from the current week.
+  final int weeks;
+
+  const StudyHeatmap({super.key, required this.byDate, this.weeks = 26});
+
+  static const List<double> _levelOpacity = <double>[0, 0.25, 0.45, 0.7, 1.0];
+
+  static const List<String> _monthShort = <String>[
+    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDay =
+        today.subtract(Duration(days: today.weekday - 1 + (weeks - 1) * 7));
+
+    int countOn(DateTime d) => byDate[dayKey(d)]?.reviewed ?? 0;
+
+    var maxCount = 1;
+    for (var i = 0; i < weeks * 7; i++) {
+      final c = countOn(firstDay.add(Duration(days: i)));
+      if (c > maxCount) maxCount = c;
+    }
+
+    final columns = <Widget>[];
+    final monthLabels = <Widget>[];
+    var prevMonth = -1;
+    for (var w = 0; w < weeks; w++) {
+      final cells = <Widget>[];
+      for (var d = 0; d < 7; d++) {
+        final date = firstDay.add(Duration(days: w * 7 + d));
+        final count = countOn(date);
+        final isFuture = date.isAfter(today);
+        final level = count == 0 || isFuture
+            ? 0
+            : (((count - 1) / maxCount * 3).round() + 1).clamp(1, 4).toInt();
+        cells.add(Container(
+          width: 12,
+          height: 12,
+          margin: const EdgeInsets.all(1.5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(3),
+            color: level == 0
+                ? cs.surfaceContainerHighest.withOpacity(0.6)
+                : cs.primary.withOpacity(_levelOpacity[level]),
+          ),
+        ));
+      }
+      columns.add(Column(children: cells));
+
+      final weekStart = firstDay.add(Duration(days: w * 7));
+      final label = weekStart.month != prevMonth
+          ? _monthShort[weekStart.month]
+          : '';
+      monthLabels.add(SizedBox(
+        width: 15,
+        child: Text(label,
+            maxLines: 1,
+            overflow: TextOverflow.clip,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant)),
+      ));
+      prevMonth = weekStart.month;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: monthLabels),
+        const SizedBox(height: 4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                for (var d = 0; d < 7; d++)
+                  SizedBox(
+                    height: 15,
+                    width: 22,
+                    child: d == 1 || d == 3 || d == 5
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              d == 1 ? 'M' : (d == 3 ? 'W' : 'F'),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant),
+                            ),
+                          )
+                        : null,
+                  ),
+              ],
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: columns),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text('Less',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+            const SizedBox(width: 4),
+            for (final opacity in _levelOpacity)
+              Container(
+                width: 10,
+                height: 10,
+                margin: const EdgeInsets.only(right: 2),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(2),
+                  color: opacity == 0
+                      ? cs.surfaceContainerHighest.withOpacity(0.6)
+                      : cs.primary.withOpacity(opacity),
+                ),
+              ),
+            const SizedBox(width: 2),
+            Text('More',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -1,8 +1,8 @@
-import '../models.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../models.dart';
 import '../widgets.dart';
 
 class StatsScreen extends StatelessWidget {
@@ -17,10 +17,8 @@ class StatsScreen extends StatelessWidget {
       for (final log in data.history) log.date: log,
     };
     final now = DateTime.now();
-    final today = dayKey(now);
 
     int reviewedOn(DateTime day) => byDate[dayKey(day)]?.reviewed ?? 0;
-    int correctOn(DateTime day) => byDate[dayKey(day)]?.correct ?? 0;
 
     final totalReviewed =
         data.history.fold(0, (sum, log) => sum + log.reviewed);
@@ -55,8 +53,7 @@ class StatsScreen extends StatelessWidget {
                   children: [
                     for (var i = 6; i >= 0; i--)
                       () {
-                        final day =
-                            now.subtract(Duration(days: i));
+                        final day = now.subtract(Duration(days: i));
                         final count = reviewedOn(day);
                         final maxCount = [
                           for (var j = 0; j < 7; j++)
@@ -64,8 +61,7 @@ class StatsScreen extends StatelessWidget {
                         ].fold(1, (m, v) => v > m ? v : m);
                         return Expanded(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -81,11 +77,10 @@ class StatsScreen extends StatelessWidget {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: cs.primary.withOpacity(
-                                          dayKey(day) == today
+                                          dayKey(day) == dayKey(now)
                                               ? 1.0
                                               : 0.45),
-                                      borderRadius:
-                                          BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
                                 ),
@@ -97,8 +92,7 @@ class StatsScreen extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(
-                                          color: cs.onSurfaceVariant),
+                                      ?.copyWith(color: cs.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -155,63 +149,11 @@ class StatsScreen extends StatelessWidget {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: _Heatmap(byDate: byDate),
+              child: StudyHeatmap(byDate: byDate),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Each square is a day. Darker means more cards reviewed.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// 12-week activity heatmap, 7 rows by 12 columns.
-class _Heatmap extends StatelessWidget {
-  final Map<String, DayLog> byDate;
-  const _Heatmap({required this.byDate});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final today = DateTime.now();
-    final cells = <Widget>[];
-    // Start on the Monday 11 weeks before the current week.
-    var day = DateTime(today.year, today.month, today.day)
-        .subtract(Duration(days: today.weekday - 1 + 11 * 7));
-    for (var week = 0; week < 12; week++) {
-      final column = <Widget>[];
-      for (var d = 0; d < 7; d++) {
-        final log = byDate[dayKey(day)];
-        final isFuture = day.isAfter(DateTime(
-            today.year, today.month, today.day));
-        final intensity = log == null
-            ? 0.0
-            : (log.reviewed / 30).clamp(0.25, 1.0).toDouble();
-        column.add(Container(
-          width: 14,
-          height: 14,
-          margin: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            color: log == null || isFuture
-                ? cs.surfaceContainerHighest.withOpacity(0.5)
-                : cs.primary.withOpacity(intensity),
-          ),
-        ));
-        day = day.add(const Duration(days: 1));
-      }
-      cells.add(Column(children: column));
-    }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: cells,
     );
   }
 }

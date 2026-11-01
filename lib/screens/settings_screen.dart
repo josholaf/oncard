@@ -3,9 +3,36 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
+import '../models.dart';
+import '../widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  /// Longest run of consecutive study days ever recorded.
+  static int _longestStreak(List<DayLog> history) {
+    final days = history
+        .where((l) => l.reviewed > 0)
+        .map((l) => l.date)
+        .toSet()
+        .toList()
+      ..sort();
+    var best = 0;
+    var run = 0;
+    DateTime? prev;
+    for (final key in days) {
+      final d = DateTime.tryParse(key);
+      if (d == null) continue;
+      if (prev != null && d.difference(prev).inDays == 1) {
+        run += 1;
+      } else {
+        run = 1;
+      }
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +50,13 @@ class SettingsScreen extends StatelessWidget {
         onTap: () => data.setThemeMode(value),
       );
     }
+
+    final totalReviewed =
+        data.history.fold(0, (sum, log) => sum + log.reviewed);
+    final longest = _longestStreak(data.history);
+    final byDate = <String, DayLog>{
+      for (final log in data.history) log.date: log,
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -56,6 +90,30 @@ class SettingsScreen extends StatelessWidget {
                 'Read card answers aloud during study sessions'),
             value: data.ttsEnabled,
             onChanged: data.setTtsEnabled,
+          ),
+          const Divider(height: 32),
+
+          Text('Study activity',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StudyHeatmap(byDate: byDate),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$totalReviewed cards reviewed · longest streak $longest days',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
           ),
           const Divider(height: 32),
 
