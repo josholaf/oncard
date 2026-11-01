@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
-import '../models.dart';
 import '../widgets.dart';
 import 'card_editor_screen.dart';
 import 'study_screen.dart';
@@ -138,7 +137,7 @@ class DeckScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: FilledButton.tonal.icon(
+                  child: FilledButton.tonalIcon(
                     onPressed: deck.cards.length < 2
                         ? null
                         : () => Navigator.push(
@@ -152,7 +151,7 @@ class DeckScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: FilledButton.tonal.icon(
+                  child: FilledButton.tonalIcon(
                     onPressed: deck.cards.isEmpty
                         ? null
                         : () => Navigator.push(

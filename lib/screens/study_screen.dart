@@ -99,7 +99,7 @@ class _StudyScreenState extends State<StudyScreen>
     _options = <String>[card.answer, ...others.take(3)]..shuffle();
   }
 
-  void _advance(Grade grade, {bool correct = false}) {
+  void _advance(Grade grade) {
     final card = _queue[_index];
     context.read<AppData>().recordReview(widget.deck.id, card, grade);
     setState(() {

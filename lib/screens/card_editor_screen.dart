@@ -51,6 +51,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   Future<void> _pickImage() async {
     try {
       final picked = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
           imageQuality: 80, maxWidth: 1600);
       if (picked == null) return;
       final dir = await getApplicationDocumentsDirectory();
