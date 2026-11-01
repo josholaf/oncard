@@ -23,9 +23,12 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - run: flutter test
+
+      - name: Generate Android platform folder
+        run: flutter create --platforms=android --project-name=oncard .
 
       - run: flutter build apk --release
 

@@ -167,10 +167,13 @@ class HomeScreen extends StatelessWidget {
         FilledButton.icon(
           onPressed: due == null
               ? null
-              : () => Navigator.push(context,
-                  MaterialPageRoute<void>(builder: (_) => StudyScreen(deck: due))),
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                      builder: (_) => StudyScreen(deck: due!))),
           icon: const Icon(Icons.play_arrow),
-          label: Text(due == null ? 'All caught up' : 'Quick start: ' + due.name),
+          label: Text(
+              due == null ? 'All caught up' : 'Quick start: ' + due.name),
         ),
         const SizedBox(height: 24),
         Text('My Decks', style: Theme.of(context).textTheme.titleMedium),
@@ -1007,37 +1010,39 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
+    final cs = Theme.of(context).colorScheme;
+
+    Widget option(String title, String subtitle, ThemeMode value) {
+      final selected = value == data.themeMode;
+      return ListTile(
+        title: Text(title),
+        subtitle: Text(subtitle),
+        leading: Icon(selected
+            ? Icons.radio_button_checked
+            : Icons.radio_button_off),
+        onTap: () => data.setThemeMode(value),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
-          RadioListTile<ThemeMode>(
-            title: const Text('System'),
-            subtitle: const Text('Follow the device setting'),
-            value: ThemeMode.system,
-            groupValue: data.themeMode,
-            onChanged: (m) => data.setThemeMode(m!),
-          ),
-          RadioListTile<ThemeMode>(
-            title: const Text('Light'),
-            value: ThemeMode.light,
-            groupValue: data.themeMode,
-            onChanged: (m) => data.setThemeMode(m!),
-          ),
-          RadioListTile<ThemeMode>(
-            title: const Text('Dark'),
-            value: ThemeMode.dark,
-            groupValue: data.themeMode,
-            onChanged: (m) => data.setThemeMode(m!),
-          ),
+          option('System', 'Follow the device setting', ThemeMode.system),
+          option('Light', 'Always light', ThemeMode.light),
+          option('Dark', 'Always dark', ThemeMode.dark),
           const SizedBox(height: 24),
           Text('About', style: Theme.of(context).textTheme.titleMedium),
-          const ListTile(
-            title: Text('Oncard'),
-            subtitle: Text(
-                'Study smarter, remember longer. Offline-first flashcards. v1.0.0'),
+          Card(
+            elevation: 0,
+            color: cs.surfaceContainerHighest,
+            child: const ListTile(
+              title: Text('Oncard'),
+              subtitle: Text(
+                  'Study smarter, remember longer. Offline-first flashcards. v1.0.0'),
+            ),
           ),
         ],
       ),
