@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
+import '../rich_text.dart';
 import '../widgets.dart';
 import 'card_editor_screen.dart';
 import 'study_screen.dart';
@@ -195,7 +196,8 @@ class DeckScreen extends StatelessWidget {
                                     child: Icon(Icons.image_rounded, size: 16),
                                   ),
                                 Expanded(
-                                  child: Text(card.answer,
+                                  child: Text(
+                                      RichMarkup.stripMarkup(card.answer),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis),
                                 ),

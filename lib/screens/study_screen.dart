@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../models.dart';
+import '../rich_text.dart';
 import '../scheduler.dart';
 
 /// The three ways to study a deck.
@@ -136,7 +137,7 @@ class _StudyScreenState extends State<StudyScreen>
       _flip.forward();
       final card = _queue[_index];
       if (context.read<AppData>().ttsEnabled && card.answer.isNotEmpty) {
-        Tts.speak(card.answer);
+        Tts.speak(RichMarkup.stripMarkup(card.answer));
       }
     }
     setState(() => _showBack = !_showBack);
@@ -162,11 +163,21 @@ class _StudyScreenState extends State<StudyScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            back ? card.answer : card.question,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          back
+              ? Text.rich(
+                  TextSpan(
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    children: RichMarkup.parseSpans(card.answer,
+                        Theme.of(context).textTheme.headlineSmall ??
+                            const TextStyle()),
+                  ),
+                  textAlign: TextAlign.center,
+                )
+              : Text(
+                  card.question,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
           if (back && card.note.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(card.note,
@@ -380,7 +391,10 @@ class _StudyScreenState extends State<StudyScreen>
                     ? null
                     : () => _gradeAndAdvance(
                         option == card.answer ? Grade.good : Grade.again),
-                child: Text(option, textAlign: TextAlign.center),
+                child: Text(
+                  RichMarkup.stripMarkup(option),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
@@ -428,7 +442,7 @@ class _StudyScreenState extends State<StudyScreen>
             filled: true,
             fillColor: cs.surfaceContainerHigh,
             errorText: _answered && _lastCorrect == false
-                ? 'Correct answer: ${card.answer}'
+                ? 'Correct answer: ${RichMarkup.stripMarkup(card.answer)}'
                 : null,
           ),
         ),
@@ -447,7 +461,8 @@ class _StudyScreenState extends State<StudyScreen>
   void _submitTyped() {
     if (_typing.text.trim().isEmpty) return;
     final card = _queue[_index];
-    final correct = _normalize(_typing.text) == _normalize(card.answer);
+    final correct = _normalize(_typing.text) ==
+        _normalize(RichMarkup.stripMarkup(card.answer));
     _gradeAndAdvance(correct ? Grade.good : Grade.again);
   }
 

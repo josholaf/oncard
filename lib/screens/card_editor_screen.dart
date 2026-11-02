@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../models.dart';
+import '../rich_text.dart';
 import 'study_screen.dart' show Tts;
 
 /// Create or edit a card. Supports an optional image, tags and TTS preview.
@@ -21,6 +22,7 @@ class CardEditorScreen extends StatefulWidget {
 
 class _CardEditorScreenState extends State<CardEditorScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _answerFocus = FocusNode();
   late final TextEditingController _question =
       TextEditingController(text: widget.card?.question ?? '');
   late final TextEditingController _answer =
@@ -43,6 +45,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   void dispose() {
     _question.dispose();
     _answer.dispose();
+    _answerFocus.dispose();
     _note.dispose();
     _tags.dispose();
     super.dispose();
@@ -104,6 +107,19 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     Navigator.pop(context);
   }
 
+  Widget _formatButton(
+      IconData icon, String tooltip, VoidCallback onPressed) {
+    return IconButton(
+      tooltip: tooltip,
+      icon: Icon(icon),
+      visualDensity: VisualDensity.compact,
+      onPressed: () {
+        onPressed();
+        FocusScope.of(context).requestFocus(_answerFocus);
+      },
+    );
+  }
+
   void _preview() {
     showDialog<void>(
       context: context,
@@ -125,9 +141,15 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                       errorBuilder: (_, __, ___) => const SizedBox.shrink()),
                 ),
               const Divider(height: 24),
-              Text(_answer.text,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(ctx).textTheme.bodyLarge),
+              Text.rich(
+                TextSpan(
+                  style: Theme.of(ctx).textTheme.bodyLarge,
+                  children: RichMarkup.parseSpans(_answer.text,
+                      Theme.of(ctx).textTheme.bodyLarge ??
+                          const TextStyle()),
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -159,8 +181,46 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   (v == null || v.trim().isEmpty) ? 'Question is required' : null,
             ),
             const SizedBox(height: 16),
+            // Formatting toolbar: styles the answer's current selection.
+            Row(
+              children: [
+                _formatButton(Icons.format_bold_rounded, 'Bold',
+                    () => RichMarkup.toggleWrap(_answer, '**', '**')),
+                _formatButton(Icons.format_italic_rounded, 'Italic',
+                    () => RichMarkup.toggleWrap(_answer, '*', '*')),
+                _formatButton(Icons.highlight_rounded, 'Highlight',
+                    () => RichMarkup.toggleWrap(_answer, '==', '==')),
+                PopupMenuButton<String>(
+                  tooltip: 'Text color',
+                  icon: const Icon(Icons.palette_rounded),
+                  onSelected: (name) =>
+                      RichMarkup.toggleWrap(_answer, '[$name]', '[/$name]'),
+                  itemBuilder: (_) => [
+                    for (final entry in RichMarkup.colors.entries)
+                      PopupMenuItem(
+                        value: entry.key,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: entry.value,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(entry.key),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
             TextFormField(
               controller: _answer,
+              focusNode: _answerFocus,
               maxLines: 3,
               decoration: const InputDecoration(
                   labelText: 'Answer (back)',
@@ -251,7 +311,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => Tts.speak(
-                          '${_question.text} ... ${_answer.text}'),
+                          '${_question.text} ... ${RichMarkup.stripMarkup(_answer.text)}'),
                       icon: const Icon(Icons.volume_up_rounded),
                       label: const Text('Listen'),
                     ),
