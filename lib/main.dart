@@ -21,9 +21,11 @@ class OncardApp extends StatelessWidget {
   final SharedPreferences prefs;
   const OncardApp({super.key, required this.prefs});
 
-  TextTheme _inter(TextTheme fallback) {
+  /// Nunito when Google Fonts can load it; otherwise the platform
+  /// default, which is San Francisco on iOS and Roboto on Android.
+  TextTheme _nunito(TextTheme fallback) {
     try {
-      return GoogleFonts.interTextTheme(fallback);
+      return GoogleFonts.nunitoTextTheme(fallback);
     } catch (_) {
       return fallback;
     }
@@ -36,9 +38,9 @@ class OncardApp extends StatelessWidget {
       child: Consumer<AppData>(
         builder: (context, data, _) {
           final light =
-              buildLightTheme(_inter(ThemeData.light().textTheme));
+              buildLightTheme(_nunito(ThemeData.light().textTheme));
           final dark =
-              buildDarkTheme(_inter(ThemeData.dark().textTheme));
+              buildDarkTheme(_nunito(ThemeData.dark().textTheme));
           return MaterialApp(
             title: 'Oncard',
             debugShowCheckedModeBanner: false,

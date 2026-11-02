@@ -55,7 +55,7 @@ flutter build apk --release
 ## Project structure
 
 ```
-lib/main.dart                 # App bootstrap, Inter theming, 5-tab shell
+lib/main.dart                 # App bootstrap, Nunito theming, 5-tab shell
 lib/models.dart               # Flashcard (content + review state), Deck, DayLog
 lib/scheduler.dart            # Spaced-repetition scheduler (Again/Hard/Good/Easy)
 lib/app_data.dart             # AppData: decks, goals, streak, history, backup
@@ -74,7 +74,7 @@ Card content (question, answer, note, tags, image) is stored separately from rev
 
 ## Tech
 
-Flutter • Dart • Provider • SharedPreferences • Google Fonts (Inter) • image_picker • flutter_tts • Material 3
+Flutter • Dart • Provider • SharedPreferences • Google Fonts (Nunito) • image_picker • flutter_tts • Material 3
 
 ## License
 

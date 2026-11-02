@@ -311,14 +311,22 @@ class _StudyScreenState extends State<StudyScreen>
       style: FilledButton.styleFrom(
         backgroundColor: color.withOpacity(0.14),
         foregroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       ),
       onPressed: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(hint, style: const TextStyle(fontSize: 11)),
-        ],
+      // FittedBox shrinks the pair to fit the button, so long words like
+      // "Again" never wrap and clip off the edge.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                maxLines: 1,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(hint, maxLines: 1, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
       ),
     );
   }
