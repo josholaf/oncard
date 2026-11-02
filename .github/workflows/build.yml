@@ -35,6 +35,9 @@ jobs:
       - name: Generate Android platform folder
         run: flutter create --platforms=android --project-name=oncard .
 
+      - name: Set app display name to Oncard
+        run: sed -i 's/android:label="oncard"/android:label="Oncard"/' android/app/src/main/AndroidManifest.xml
+
       - run: flutter build apk --release
 
       - uses: actions/upload-artifact@v4
@@ -48,7 +51,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" \
-            --target "$GITHUB_SHA" \
+            --target "${GITHUB_SHA}" \
             --title "Oncard ${GITHUB_REF_NAME}" \
             --generate-notes \
             build/app/outputs/flutter-apk/app-release.apk
