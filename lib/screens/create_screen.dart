@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
-import '../theme.dart';
+import '../emoji_picker.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
 
@@ -167,8 +167,7 @@ class _NewDeckSheet extends StatefulWidget {
 
 class _NewDeckSheetState extends State<_NewDeckSheet> {
   final _name = TextEditingController();
-  String _icon = deckIcons.first;
-  int _color = 0;
+  String _icon = '👋';
 
   bool get _valid => _name.text.trim().isNotEmpty;
 
@@ -201,65 +200,32 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
             const SizedBox(height: 16),
             Text('Icon', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6, childAspectRatio: 1),
-              itemCount: deckIcons.length,
-              itemBuilder: (context, i) {
-                final icon = deckIcons[i];
-                final selected = icon == _icon;
-                return InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => setState(() => _icon = icon),
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: selected
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
-                      border: selected
-                          ? null
-                          : Border.all(
-                              color: Theme.of(context).colorScheme.outline),
-                    ),
-                    child: Center(
-                        child:
-                            Text(icon, style: const TextStyle(fontSize: 22))),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            Text('Color', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: deckPalette.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  final selected = i == _color;
-                  return GestureDetector(
-                    onTap: () => setState(() => _color = i),
-                    child: Container(
-                      width: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: deckPalette[i],
-                        border: Border.all(
-                          color: selected
-                              ? Theme.of(context).colorScheme.onSurface
-                              : Colors.transparent,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                  );
+            Center(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () async {
+                  final picked =
+                      await showEmojiPickerSheet(context, current: _icon);
+                  if (picked != null) setState(() => _icon = picked);
                 },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color:
+                        Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_icon, style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 10),
+                      Text('Tap to choose icon',
+                          style: Theme.of(context).textTheme.titleSmall),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -268,7 +234,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
               child: FilledButton(
                 onPressed: _valid
                     ? () {
-                        widget.onCreate(_name.text.trim(), _icon, _color);
+                        widget.onCreate(_name.text.trim(), _icon, 0);
                         Navigator.pop(context);
                       }
                     : null,
@@ -281,3 +247,4 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
     );
   }
 }
+

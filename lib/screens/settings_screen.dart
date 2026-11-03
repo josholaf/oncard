@@ -4,36 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
-import '../models.dart';
-import '../widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  /// Longest run of consecutive study days ever recorded.
-  static int _longestStreak(List<DayLog> history) {
-    final days = history
-        .where((l) => l.reviewed > 0)
-        .map((l) => l.date)
-        .toSet()
-        .toList()
-      ..sort();
-    var best = 0;
-    var run = 0;
-    DateTime? prev;
-    for (final key in days) {
-      final d = DateTime.tryParse(key);
-      if (d == null) continue;
-      if (prev != null && d.difference(prev).inDays == 1) {
-        run += 1;
-      } else {
-        run = 1;
-      }
-      if (run > best) best = run;
-      prev = d;
-    }
-    return best;
-  }
 
   /// Small uppercase section label, like a grouped settings list header.
   Widget _header(BuildContext context, String text) {
@@ -51,13 +24,6 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
     final cs = Theme.of(context).colorScheme;
-
-    final totalReviewed =
-        data.history.fold(0, (sum, log) => sum + log.reviewed);
-    final longest = _longestStreak(data.history);
-    final byDate = <String, DayLog>{
-      for (final log in data.history) log.date: log,
-    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -123,28 +89,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          _header(context, 'Study activity'),
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  StudyHeatmap(byDate: byDate),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$totalReviewed cards reviewed · longest streak $longest days',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           _header(context, 'Backup'),
           Card(
             margin: EdgeInsets.zero,
@@ -205,7 +149,7 @@ class SettingsScreen extends StatelessWidget {
             child: const ListTile(
               title: Text('Oncard'),
               subtitle: Text(
-                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v2.0.0'),
+                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v1.0.02'),
             ),
           ),
         ],
@@ -213,3 +157,4 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+

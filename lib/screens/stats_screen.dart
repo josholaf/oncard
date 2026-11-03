@@ -143,7 +143,7 @@ class StatsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          Text('Study calendar',
+          Text('Study flashcards',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Card(
@@ -157,3 +157,4 @@ class StatsScreen extends StatelessWidget {
     );
   }
 }
+
