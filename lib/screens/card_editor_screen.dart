@@ -107,6 +107,12 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     Navigator.pop(context);
   }
 
+  /// Swatches offered in the highlight menu (amber default + palette).
+  static const Map<String, Color> _highlightColors = <String, Color>{
+    'amber': RichMarkup.highlight,
+    ...RichMarkup.colors,
+  };
+
   Widget _formatButton(
       IconData icon, String tooltip, VoidCallback onPressed) {
     return IconButton(
@@ -188,15 +194,18 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                     () => RichMarkup.toggleWrap(_answer, '**', '**')),
                 _formatButton(Icons.format_italic_rounded, 'Italic',
                     () => RichMarkup.toggleWrap(_answer, '*', '*')),
-                _formatButton(Icons.highlight_rounded, 'Highlight',
-                    () => RichMarkup.toggleWrap(_answer, '==', '==')),
+                _formatButton(Icons.format_underline_rounded, 'Underline',
+                    () => RichMarkup.toggleWrap(_answer, '__', '__')),
                 PopupMenuButton<String>(
-                  tooltip: 'Text color',
-                  icon: const Icon(Icons.palette_rounded),
-                  onSelected: (name) =>
-                      RichMarkup.toggleWrap(_answer, '[$name]', '[/$name]'),
+                  tooltip: 'Highlight color',
+                  icon: const Icon(Icons.highlight_rounded),
+                  onSelected: (name) {
+                    RichMarkup.toggleWrap(
+                        _answer, name == 'amber' ? '==' : '==$name:', '==');
+                    FocusScope.of(context).requestFocus(_answerFocus);
+                  },
                   itemBuilder: (_) => [
-                    for (final entry in RichMarkup.colors.entries)
+                    for (final entry in _highlightColors.entries)
                       PopupMenuItem(
                         value: entry.key,
                         child: Row(

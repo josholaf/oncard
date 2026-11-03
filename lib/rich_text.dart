@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 /// Lightweight inline markup for card answers.
 ///
 /// Supported syntax:
-///   **bold**          *italic*          ==highlight==
-///   [red]text[/red]   (red, blue, green, orange, purple)
+///   **bold**    *italic*    __underline__    ==highlight==
+///   ==red: text==            colored highlight (palette names)
+///   [red]text[/red]          colored text (red, blue, green, orange, purple)
 ///
-/// Plain answers render unchanged, so existing cards keep working.
+/// Plain answers and markdown-style **bold** / *italic* from imported CSV
+/// files render unchanged or styled, so existing cards keep working.
 class RichMarkup {
   /// Fixed text palette so answers stay readable in both themes.
   static const Map<String, Color> colors = <String, Color>{
@@ -21,10 +23,11 @@ class RichMarkup {
   static const Color highlight = Color(0x59FFD54F);
 
   static final RegExp _pattern = RegExp(
-    '\\*\\*(.+?)\\*\\*'
-    '|\\*(.+?)\\*'
-    '|==(.+?)=='
-    '|\\[(red|blue|green|orange|purple)\\](.+?)\\[/\\4\\]',
+    r'\*\*(.+?)\*\*'
+    r'|\*(.+?)\*'
+    r'|__(.+?)__'
+    r'|==(?:(red|blue|green|orange|purple|amber):)?(.+?)=='
+    r'|\[(red|blue|green|orange|purple)\](.+?)\[/\6\]',
     dotAll: true,
   );
 
@@ -41,14 +44,21 @@ class RichMarkup {
             text: m[1],
             style: base.copyWith(fontWeight: FontWeight.w700)));
       } else if (m[2] != null) {
-        spans.add(TextSpan(
-            text: m[2], style: base.copyWith(fontStyle: FontStyle.italic)));
+        spans.add(
+            TextSpan(text: m[2], style: base.copyWith(fontStyle: FontStyle.italic)));
       } else if (m[3] != null) {
         spans.add(TextSpan(
-            text: m[3], style: base.copyWith(backgroundColor: highlight)));
+            text: m[3],
+            style: base.copyWith(decoration: TextDecoration.underline)));
+      } else if (m[5] != null) {
+        final bg = m[4] != null && colors[m[4]] != null
+            ? colors[m[4]]!.withOpacity(0.45)
+            : highlight;
+        spans.add(
+            TextSpan(text: m[5], style: base.copyWith(backgroundColor: bg)));
       } else {
         spans.add(
-            TextSpan(text: m[5], style: base.copyWith(color: colors[m[4]])));
+            TextSpan(text: m[7], style: base.copyWith(color: colors[m[6]])));
       }
       pos = m.end;
     }
@@ -60,7 +70,7 @@ class RichMarkup {
 
   /// Removes markup, leaving only the visible characters.
   static String stripMarkup(String text) => text
-      .replaceAllMapped(_pattern, (m) => m[1] ?? m[2] ?? m[3] ?? m[5] ?? '');
+      .replaceAllMapped(_pattern, (m) => m[1] ?? m[2] ?? m[3] ?? m[5] ?? m[7] ?? '');
 
   /// Wraps (or unwraps, if already wrapped) the controller's current
   /// selection with [before] and [after]. An empty selection inserts the
