@@ -23,6 +23,10 @@ class AppData extends ChangeNotifier {
   bool ttsEnabled = false;
   List<DayLog> history = <DayLog>[];
 
+  /// Latest release found by the update checker (null = up to date).
+  String? updateVersion;
+  String? updateUrl;
+
   AppData(this._prefs) {
     _load();
   }
@@ -90,6 +94,14 @@ class AppData extends ChangeNotifier {
   void setTtsEnabled(bool enabled) {
     ttsEnabled = enabled;
     _prefs.setBool('oncard.tts', enabled);
+    notifyListeners();
+  }
+
+  /// Called by the update checker once a newer GitHub release is found.
+  /// Pass nulls to hide the update bar again.
+  void setUpdateInfo(String? version, String? url) {
+    updateVersion = version;
+    updateUrl = url;
     notifyListeners();
   }
 

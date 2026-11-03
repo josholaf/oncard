@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../models.dart';
+import '../update_bar.dart';
 import '../widgets.dart';
 import 'study_screen.dart';
 
@@ -57,6 +58,9 @@ class HomeScreen extends StatelessWidget {
                 .textTheme
                 .bodySmall
                 ?.copyWith(color: cs.onSurfaceVariant)),
+
+        // Update bar appears only when a newer release is known.
+        const UpdateBar(),
 
         const SizedBox(height: 20),
 
