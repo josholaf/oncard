@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../emoji_picker.dart';
+import '../widgets.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
 
@@ -29,8 +30,7 @@ class CreateScreen extends StatelessWidget {
             ),
             for (final deck in data.decks)
               ListTile(
-                leading: Text(deck.icon,
-                    style: const TextStyle(fontSize: 22)),
+                leading: DeckIcon(icon: deck.icon, size: 22),
                 title: Text(deck.name),
                 onTap: () => Navigator.pop(sheetContext, deck.id),
               ),
@@ -219,7 +219,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_icon, style: const TextStyle(fontSize: 28)),
+                      DeckIcon(icon: _icon, size: 28),
                       const SizedBox(width: 10),
                       Text('Tap to choose icon',
                           style: Theme.of(context).textTheme.titleSmall),

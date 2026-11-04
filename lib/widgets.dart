@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_data.dart';
 import 'models.dart';
+import 'lucide_icons.dart';
 import 'theme.dart';
 
 /// Five small dots showing how deep a card's memory trace is.
@@ -150,6 +151,23 @@ class StatCard extends StatelessWidget {
   }
 }
 
+/// Renders a deck icon that is either an emoji character or a
+/// 'lucide:<name>' reference from the Lucide icon set.
+class DeckIcon extends StatelessWidget {
+  final String icon;
+  final double size;
+  final Color? color;
+  const DeckIcon({super.key, required this.icon, this.size = 24, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    if (icon.startsWith('lucide:')) {
+      return LucideIcon(name: icon.substring(7), size: size, color: color);
+    }
+    return Text(icon, style: TextStyle(fontSize: size, color: color));
+  }
+}
+
 /// Deck avatar: colored circle with the deck emoji.
 class DeckAvatar extends StatelessWidget {
   final String icon;
@@ -163,7 +181,7 @@ class DeckAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: size / 2,
       backgroundColor: deckPalette[colorIndex % deckPalette.length],
-      child: Text(icon, style: TextStyle(fontSize: size * 0.45)),
+      child: DeckIcon(icon: icon, size: size * 0.55, color: Colors.white),
     );
   }
 }

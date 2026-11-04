@@ -21,6 +21,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   bool _favoritesOnly = false;
   bool _grid = false;
   _SortBy _sort = _SortBy.recent;
+  String? _selectedId;
 
   List<Deck> _visible(AppData data) {
     var decks = <Deck>[...data.decks];
@@ -45,6 +46,30 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return decks;
   }
 
+  Future<void> _confirmDelete(BuildContext context, AppData data) async {
+    final id = _selectedId;
+    if (id == null) return;
+    final deck = data.deckById(id);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete deck?'),
+        content: Text(
+            'Delete \"' + (deck?.name ?? 'this deck') + '\" and all its cards? This cannot be undone.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok == true) data.deleteDeck(id);
+    if (mounted) setState(() => _selectedId = null);
+  }
+
   void _openDeck(BuildContext context, String id) {
     Navigator.push(
         context,
@@ -61,18 +86,32 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
-        actions: [
-          IconButton(
-            tooltip: _grid ? 'List view' : 'Grid view',
-            icon: Icon(_grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
-            onPressed: () => setState(() => _grid = !_grid),
-          ),
-          IconButton(
-            tooltip: 'New deck',
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () => showNewDeckSheet(context),
-          ),
-        ],
+        actions: _selectedId != null
+            ? [
+                IconButton(
+                  tooltip: 'Delete deck',
+                  icon: const Icon(Icons.delete_rounded),
+                  onPressed: () => _confirmDelete(context, data),
+                ),
+                IconButton(
+                  tooltip: 'Cancel selection',
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => setState(() => _selectedId = null),
+                ),
+              ]
+            : [
+                IconButton(
+                  tooltip: _grid ? 'List view' : 'Grid view',
+                  icon: Icon(
+                      _grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
+                  onPressed: () => setState(() => _grid = !_grid),
+                ),
+                IconButton(
+                  tooltip: 'New deck',
+                  icon: const Icon(Icons.add_rounded),
+                  onPressed: () => showNewDeckSheet(context),
+                ),
+              ],
       ),
       body: Column(
         children: [
@@ -155,9 +194,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget _deckTile(
       BuildContext context, AppData data, Deck deck, bool grid) {
     final cs = Theme.of(context).colorScheme;
+    final selected = _selectedId == deck.id;
     final inner = InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () => _openDeck(context, deck.id),
+      onTap: () {
+        if (_selectedId != null) {
+          setState(() => _selectedId = selected ? null : deck.id);
+        } else {
+          _openDeck(context, deck.id);
+        }
+      },
+      onLongPress: () => setState(() => _selectedId = deck.id),
       child: Padding(
         padding: EdgeInsets.all(grid ? 14 : 12),
         child: grid
@@ -236,6 +283,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
     return Card(
       margin: grid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+      color: selected ? cs.primaryContainer : null,
       child: inner,
     );
   }

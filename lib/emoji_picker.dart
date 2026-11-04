@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'lucide_icons.dart';
+
 /// Searchable emoji picker for deck icons.
 ///
 /// Emoji are Unicode characters, an open standard free for anyone to use.
@@ -222,10 +224,89 @@ const Map<String, String> emojiKeywords = <String, String>{
   '🚫': 'forbidden stop',
   '♻️': 'recycle',
   '🆗': 'ok button',
+  '🍕': 'pizza food italian',
+  '🍔': 'burger food fast',
+  '🍟': 'fries food',
+  '🍓': 'hotdog food',
+  '🍿': 'popcorn movie snack',
+  '🥐': 'croissant breakfast',
+  '🥮': 'bread bakery baguette',
+  '🥗': 'salad healthy food',
+  '🍜': 'noodles ramen food',
+  '🍣': 'sushi japanese food',
+  '🍩': 'donut sweet',
+  '🍪': 'cookie sweet',
+  '🍦': 'ice cream dessert',
+  '🍫': 'chocolate sweet',
+  '🍎': 'apple fruit red',
+  '🍌': 'banana fruit',
+  '🍇': 'grapes fruit',
+  '🍉': 'watermelon fruit',
+  '🍓': 'strawberry fruit',
+  '🍒': 'cherry fruit',
+  '🥑': 'avocado food',
+  '🥕': 'carrot vegetable',
+  '🌽': 'corn vegetable',
+  '⚽': 'soccer football sport',
+  '🏀': 'basketball sport',
+  '🏉': 'football sport',
+  '⚾': 'baseball sport',
+  '🎾': 'tennis sport',
+  '🏐': 'volleyball sport',
+  '🎱': 'pool billiards game',
+  '🏓': 'ping pong table tennis',
+  '🏸': 'badminton sport',
+  '🥊': 'boxing fight sport',
+  '🚴': 'cycling bike sport',
+  '🏊': 'swimming sport',
+  '🏃': 'running sport',
+  '🧘': 'yoga meditate calm',
+  '⛷️': 'skiing winter sport',
+  '🤸': 'gymnastics sport',
+  '🐘': 'elephant animal',
+  '🦒': 'giraffe animal',
+  '🦓': 'zebra animal',
+  '🐄': 'cow animal farm',
+  '🐎': 'horse animal',
+  '🐑': 'sheep animal farm',
+  '🦌': 'deer animal',
+  '🐓': 'rooster chicken',
+  '🦃': 'turkey bird',
+  '🦚': 'peacock bird',
+  '🦜': 'parrot bird',
+  '🐌': 'snail slow',
+  '🐛': 'bug caterpillar',
+  '🐜': 'ant insect',
+  '🦠': 'germ microbe virus',
+  '🚄': 'train fast rail',
+  '🚂': 'train steam rail',
+  '🏵️': 'scooter moto',
+  '🚕': 'taxi car',
+  '🚌': 'bus',
+  '🚙': 'suv car',
+  '🛶': 'canoe boat',
+  '🚁': 'helicopter',
+  '🛰️': 'satellite space',
+  '⌚': 'watch time',
+  '🕶️': 'sunglasses cool',
+  '💍': 'ring wedding',
+  '🎒': 'backpack school',
+  '👗': 'dress fashion',
+  '👟': 'sneaker shoe running',
+  '🎩': 'hat top hat',
+  '☮️': 'peace',
+  '☯️': 'yin yang balance',
+  '⚛️': 'atom science',
+  '🆓': 'free button',
+  '🆙': 'up button',
+  '💯': 'hundred perfect score',
+  '🆒': 'cool button',
+  '🆚': 'versus vs',
 };
 
-/// Opens a rounded bottom sheet with a searchable emoji grid.
-/// Returns the chosen emoji, or null when dismissed.
+/// Opens a rounded bottom sheet with a searchable emoji and icon grid.
+/// Returns the chosen emoji, a 'lucide:<name>' icon reference, or null
+/// when dismissed.
 Future<String?> showEmojiPickerSheet(BuildContext context,
     {String current = '👋'}) {
   return showModalBottomSheet<String>(
@@ -250,12 +331,14 @@ class _EmojiPickerSheet extends StatefulWidget {
 
 class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
   final _search = TextEditingController();
-  late List<String> _matches =
-      emojiKeywords.keys.toList(growable: false);
+  bool _icons = false;
+  List<String> _emojiMatches = emojiKeywords.keys.toList(growable: false);
+  List<String> _iconMatches = kLucideIcons.keys.toList(growable: false);
 
   @override
   void initState() {
     super.initState();
+    if (widget.current.startsWith('lucide:')) _icons = true;
     _search.addListener(_filter);
   }
 
@@ -269,19 +352,22 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
   void _filter() {
     final q = _search.text.trim().toLowerCase();
     setState(() {
-      _matches = q.isEmpty
+      _emojiMatches = q.isEmpty
           ? emojiKeywords.keys.toList(growable: false)
           : emojiKeywords.entries
-              .where((e) =>
-                  e.key.contains(q) || e.value.contains(q))
+              .where((e) => e.key.contains(q) || e.value.contains(q))
               .map((e) => e.key)
               .toList(growable: false);
+      _iconMatches = kLucideIcons.keys
+          .where((name) => name.replaceAll('-', ' ').contains(q))
+          .toList(growable: false);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final matches = _icons ? _iconMatches : _emojiMatches;
     return SafeArea(
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.65,
@@ -289,11 +375,25 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Emoji')),
+                  ButtonSegment(value: true, label: Text('Icons')),
+                ],
+                selected: <bool>{_icons},
+                onSelectionChanged: (selection) =>
+                    setState(() => _icons = selection.first),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: TextField(
                 controller: _search,
                 autofocus: false,
                 decoration: InputDecoration(
-                  hintText: 'Search emoji, e.g. cat, book, heart',
+                  hintText: _icons
+                      ? 'Search icons, e.g. book, rocket'
+                      : 'Search emoji, e.g. cat, book, heart',
                   prefixIcon: const Icon(Icons.search_rounded),
                   isDense: true,
                   filled: true,
@@ -306,21 +406,22 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
               ),
             ),
             Expanded(
-              child: _matches.isEmpty
+              child: matches.isEmpty
                   ? const Center(
-                      child: Text('No emoji match that search.'))
+                      child: Text('Nothing matches that search.'))
                   : GridView.builder(
                       padding: const EdgeInsets.all(16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 6, childAspectRatio: 1),
-                      itemCount: _matches.length,
+                      itemCount: matches.length,
                       itemBuilder: (context, i) {
-                        final emoji = _matches[i];
-                        final selected = emoji == widget.current;
+                        final item = matches[i];
+                        final value = _icons ? 'lucide:' + item : item;
+                        final selected = value == widget.current;
                         return InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => Navigator.pop(context, emoji),
+                          onTap: () => Navigator.pop(context, value),
                           child: Container(
                             margin: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
@@ -333,8 +434,15 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
                                   : Border.all(color: cs.outline),
                             ),
                             child: Center(
-                                child: Text(emoji,
-                                    style: const TextStyle(fontSize: 24))),
+                              child: _icons
+                                  ? LucideIcon(
+                                      name: item,
+                                      size: 24,
+                                      color: cs.onSurface)
+                                  : Text(item,
+                                      style:
+                                          const TextStyle(fontSize: 24)),
+                            ),
                           ),
                         );
                       },

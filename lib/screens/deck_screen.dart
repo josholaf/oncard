@@ -36,6 +36,35 @@ class DeckScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _renameDeck(BuildContext context, AppData data) async {
+    final deck = data.deckById(deckId);
+    if (deck == null) return;
+    final controller = TextEditingController(text: deck.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename deck'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Deck name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    if (name != null && name.isNotEmpty) {
+      data.updateDeck(deckId,
+          name: name, icon: deck.icon, colorIndex: deck.colorIndex);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
@@ -74,6 +103,9 @@ class DeckScreen extends StatelessWidget {
                         content: Text('Exported to ${file.path}')));
                   }
                   break;
+                case 'rename':
+                  await _renameDeck(context, data);
+                  break;
                 case 'delete':
                   await _confirmDelete(context, data);
                   break;
@@ -86,6 +118,7 @@ class DeckScreen extends StatelessWidget {
                   value: 'import-tsv', child: Text('Import TSV')),
               PopupMenuItem(
                   value: 'export', child: Text('Export as CSV')),
+              PopupMenuItem(value: 'rename', child: Text('Rename deck')),
               PopupMenuItem(value: 'delete', child: Text('Delete deck')),
             ],
           ),
@@ -272,7 +305,7 @@ Future<void> pickDeckAndImportCsv(BuildContext context) async {
           ),
           for (final deck in data.decks)
             ListTile(
-              leading: Text(deck.icon, style: const TextStyle(fontSize: 22)),
+              leading: DeckIcon(icon: deck.icon, size: 22),
               title: Text(deck.name),
               onTap: () => Navigator.pop(sheetContext, deck.id),
             ),
