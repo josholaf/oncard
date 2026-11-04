@@ -227,7 +227,7 @@ const Map<String, String> emojiKeywords = <String, String>{
   '🍕': 'pizza food italian',
   '🍔': 'burger food fast',
   '🍟': 'fries food',
-  '🍓': 'hotdog food',
+  '🌭': 'hotdog food',
   '🍿': 'popcorn movie snack',
   '🥐': 'croissant breakfast',
   '🥮': 'bread bakery baguette',
