@@ -38,6 +38,9 @@ jobs:
       - name: Set app display name to Oncard
         run: sed -i 's/android:label="oncard"/android:label="Oncard"/' android/app/src/main/AndroidManifest.xml
 
+      - name: Wire text-selection quick add
+        run: python3 scripts/setup_process_text.py
+
       - name: Render app icon from logo.svg
         run: |
           sudo apt-get update -qq

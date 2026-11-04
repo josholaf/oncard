@@ -7,6 +7,7 @@ import 'app_data.dart';
 import 'screens/create_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/library_screen.dart';
+import 'screens/quick_add_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/stats_screen.dart';
 import 'theme.dart';
@@ -64,6 +65,14 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeOpenQuickAdd(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
