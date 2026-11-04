@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Oncard (Android + Windows)
 
 on:
   push:
@@ -38,6 +38,25 @@ jobs:
       - name: Set app display name to Oncard
         run: sed -i 's/android:label="oncard"/android:label="Oncard"/' android/app/src/main/AndroidManifest.xml
 
+      - name: Render app icon from logo.svg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends librsvg2-bin imagemagick
+          for size in 48 72 96 144 192 256; do
+            rsvg-convert -w $size -h $size assets/logo.svg -o icon$size.png
+          done
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            size=${d#*:}; dir=${d%:*}
+            cp icon$size.png android/app/src/main/res/mipmap-$dir/ic_launcher.png
+            cp icon$size.png android/app/src/main/res/mipmap-$dir/ic_launcher_round.png
+          done
+          convert -background none icon256.png -define icon:auto-resize=256,128,64,48,32,16 app_icon.ico
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-icon-ico
+          path: app_icon.ico
+
       - run: flutter build apk --release
 
       - uses: actions/upload-artifact@v4
@@ -55,3 +74,46 @@ jobs:
             --title "Oncard ${GITHUB_REF_NAME}" \
             --generate-notes \
             build/app/outputs/flutter-apk/app-release.apk
+
+  windows:
+    if: github.ref_name != 'main'
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.24.5
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Generate Windows platform folder
+        run: flutter create --platforms=windows --project-name=oncard .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-icon-ico
+
+      - name: Set app icon
+        shell: bash
+        run: cp app_icon.ico windows/runner/resources/app_icon.ico
+
+      - run: flutter build windows --release
+
+      - name: Package Windows build
+        shell: pwsh
+        run: Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath 'Oncard-Windows-x64.zip'
+
+      - name: Attach Windows build to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 12); do
+            gh release upload "$GITHUB_REF_NAME" Oncard-Windows-x64.zip && exit 0
+            sleep 30
+          done
+          exit 1
