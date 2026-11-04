@@ -69,11 +69,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          cp build/app/outputs/flutter-apk/app-release.apk Oncard.apk
           gh release create "${GITHUB_REF_NAME}" \
             --target "${GITHUB_SHA}" \
             --title "Oncard ${GITHUB_REF_NAME}" \
             --generate-notes \
-            build/app/outputs/flutter-apk/app-release.apk
+            Oncard.apk
 
   windows:
     if: github.ref_name != 'main'
