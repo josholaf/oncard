@@ -1,80 +1,94 @@
 # Oncard
 
-**Study smarter, remember longer.**
+Offline-first flashcard app with spaced repetition. Built with Flutter.
 
-A beautiful, offline-first flashcard app with real spaced repetition. Built with Flutter for Android (and ready for iOS, Web and Desktop).
+No account, no ads, no network access required. All data stays on the device.
 
-## What's inside (v2.0)
+## Features
 
-- **Home dashboard** — greeting, due/new summary, one-tap "Start studying", streak and daily-goal progress, recently studied decks
-- **Library** — search, favorites, sorting (name / recently studied / progress), grid or list view
-- **Spaced repetition scheduler** — Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors (FSRS-inspired, fully offline)
-- **Three study modes** — flip cards with 3D animation, multiple-choice quiz, type-the-answer
-- **Image flashcards** — attach a picture to any card (great for anatomy, diagrams, maps)
-- **Text to speech** — optional read-aloud for questions and answers (Settings → Study)
-- **Statistics** — weekly activity chart, accuracy, cards learned, due-tomorrow preview, 12-week study heatmap
-- **Card editor** — front/back, note, tags, image attachment, preview before saving
-- **Import / export** — CSV and TSV import, CSV export per deck, full JSON backup and restore
-- **Goals** — configurable daily card goal
-- **Themes** — warm paper light theme, charcoal dark theme, system default
-- **Offline-first** — everything is stored on-device; no account, no network required, no ads
+- Spaced repetition scheduler with Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors
+- Three study modes: flip cards, multiple choice, type the answer
+- Image cards, tags, notes
+- Text to speech (optional)
+- Statistics: accuracy, learned cards, weekly activity, 12-week heatmap
+- Deck management: rename, delete, color, emoji or Lucide icon
+- Create cards from text selected in any other app (Android text selection menu)
+- CSV / TSV import, CSV export, full JSON backup and restore
+- Daily goal and streak tracking
+- Light and dark themes
 
-## Test APK
+## Download
 
-Every push to `main` builds a release APK with GitHub Actions. Tagged versions (`v*`) also publish a GitHub Release with the APK attached. See [Releases](https://github.com/josholaf/oncard/releases).
+Prebuilt APKs are on the [releases page](https://github.com/josholaf/oncard/releases).
 
-## CSV / TSV format
+Every push to `main` builds an APK with GitHub Actions. Tagged versions publish a release.
 
-Rows with a `question` / `answer` header are detected and skipped. Columns, in order:
+## Install
+
+The APK is unsigned by CI. Enable install from unknown sources, then install `Oncard.apk`. Requires Android 6.0 or newer.
+
+## Build from source
+
+Requires Flutter 3.24 or newer.
+
+```bash
+git clone https://github.com/josholaf/oncard.git
+cd oncard
+flutter pub get
+flutter run
+```
+
+Run the tests and analyzer:
+
+```bash
+flutter analyze
+flutter test
+```
+
+Build a release APK:
+
+```bash
+flutter create --platforms=android --project-name=oncard .
+python3 scripts/setup_process_text.py
+flutter build apk --release
+```
+
+The `android/` folder is generated, not committed. `scripts/setup_process_text.py` patches the generated manifest for the text selection feature. CI does the same.
+
+## Import format
+
+CSV and TSV use these columns in order:
 
 ```
 question,answer,note,tags
 ```
 
-Separate multiple tags with `;`. The note and tags columns are optional. TSV files use the same columns separated by tabs.
+Header rows are detected and skipped. Separate multiple tags with `;`. Note and tags are optional.
 
-## Run / Build locally
+## Adding cards from other apps (Android)
 
-```bash
-# Prerequisites: Flutter 3.24+
-git clone https://github.com/josholaf/oncard.git
-cd oncard
-flutter pub get
+Select text in any app, tap Oncard in the selection menu, edit the card, pick a deck, save.
 
-# Run on connected device / emulator
-flutter devices
-flutter run
-
-# Analyze, test, and build APK
-flutter analyze
-flutter test
-flutter build apk --release
-# Output: build/app/outputs/flutter-apk/app-release.apk
-```
-
-## Project structure
+## Project layout
 
 ```
-lib/main.dart                 # App bootstrap, Nunito theming, 5-tab shell
-lib/models.dart               # Flashcard (content + review state), Deck, DayLog
-lib/scheduler.dart            # Spaced-repetition scheduler (Again/Hard/Good/Easy)
-lib/app_data.dart             # AppData: decks, goals, streak, history, backup
-lib/theme.dart                # Palette and light/dark Material 3 themes
-lib/widgets.dart              # Mastery dots, badges, stat cards, deck avatars
-lib/import_export.dart        # CSV/TSV import, CSV export, JSON backup/restore
-lib/sample_decks.dart         # Starter decks seeded on first run
-lib/screens/                  # home, library, create, deck, editor, study, stats, settings
-test/models_test.dart         # Model, migration and scheduler tests
-test/widget_test.dart          # App smoke test
+lib/main.dart            App bootstrap and navigation shell
+lib/models.dart         Flashcard, Deck, DayLog
+lib/scheduler.dart      Spaced repetition scheduler
+lib/app_data.dart       State, persistence, goals, streaks
+lib/import_export.dart  CSV/TSV import, CSV export, JSON backup
+lib/screens/            App screens
+lib/lucide_icons.dart   Embedded Lucide icon set (ISC license)
+test/                   Model, migration, scheduler and widget tests
 ```
 
 ## Scheduling model
 
-Card content (question, answer, note, tags, image) is stored separately from review state (due date, stability, ease, reps, lapses). Stability is the number of days a memory is expected to survive; it grows multiplicatively on Good/Easy and collapses on Again. A card counts as mastered once its stability reaches 21 days, but it keeps resurfacing for long-term review. All scheduling is deterministic and runs on-device.
+Card content and review state are stored separately. Review state holds due date, stability, ease, reps and lapses. Stability is the expected number of days a memory survives. It grows on Good and Easy, resets on Again. A card is considered mastered at 21 days stability and keeps resurfacing for review.
 
-## Tech
+## Contributing
 
-Flutter • Dart • Provider • SharedPreferences • Google Fonts (Nunito) • image_picker • flutter_tts • Material 3
+Bug reports and pull requests are welcome. Keep the app offline-first and avoid new package dependencies unless necessary.
 
 ## License
 
