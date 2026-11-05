@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../cloze.dart';
 import '../models.dart';
 import '../rich_text.dart';
 import 'study_screen.dart' show Tts;
@@ -23,6 +24,7 @@ class CardEditorScreen extends StatefulWidget {
 class _CardEditorScreenState extends State<CardEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _answerFocus = FocusNode();
+  final _questionFocus = FocusNode();
   late final TextEditingController _question =
       TextEditingController(text: widget.card?.question ?? '');
   late final TextEditingController _answer =
@@ -45,6 +47,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   void dispose() {
     _question.dispose();
     _answer.dispose();
+    _questionFocus.dispose();
     _answerFocus.dispose();
     _note.dispose();
     _tags.dispose();
@@ -81,30 +84,81 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
+    final question = _question.text.trim();
+    final answer = _answer.text.trim();
+    final note = _note.text.trim();
+    final tags = _parseTags(_tags.text);
     if (_isEditing) {
       context.read<AppData>().updateCard(
             widget.deckId,
             widget.card!.id,
-            question: _question.text.trim(),
-            answer: _answer.text.trim(),
-            note: _note.text.trim(),
+            question: question,
+            answer: answer.isEmpty && Cloze.hasCloze(question)
+                ? Cloze.answerFor(question, widget.card!.clozeIndex)
+                : answer,
+            note: note,
             imagePath: _imagePath,
-            tags: _parseTags(_tags.text),
+            tags: tags,
           );
     } else {
-      context.read<AppData>().addCard(
-            widget.deckId,
-            Flashcard(
-              id: uuid.v4(),
-              question: _question.text.trim(),
-              answer: _answer.text.trim(),
-              note: _note.text.trim(),
-              tags: _parseTags(_tags.text),
-              imagePath: _imagePath,
-            ),
-          );
+      final groups = Cloze.groups(question);
+      if (groups.length > 1) {
+        // Anki-style cloze: one card per deletion group.
+        for (final group in groups) {
+          context.read<AppData>().addCard(
+                widget.deckId,
+                Flashcard(
+                  id: uuid.v4(),
+                  question: question,
+                  answer: answer.isNotEmpty
+                      ? answer
+                      : Cloze.answerFor(question, group),
+                  note: note,
+                  tags: tags,
+                  imagePath: _imagePath,
+                  clozeIndex: group,
+                ),
+              );
+        }
+      } else {
+        context.read<AppData>().addCard(
+              widget.deckId,
+              Flashcard(
+                id: uuid.v4(),
+                question: question,
+                answer: answer.isNotEmpty
+                    ? answer
+                    : Cloze.answerFor(question, 1),
+                note: note,
+                tags: tags,
+                imagePath: _imagePath,
+              ),
+            );
+      }
     }
     Navigator.pop(context);
+  }
+
+  /// Wraps the question's current selection in the next cloze marker.
+  void _wrapCloze() {
+    final controller = _question;
+    final selection = controller.value.selection;
+    if (!selection.isValid || selection.isCollapsed) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Select some text in the question first.')));
+      return;
+    }
+    final text = controller.text;
+    final hidden = text.substring(selection.start, selection.end);
+    final wrapped = '{{c${Cloze.nextGroup(text)}::$hidden}}';
+    final next =
+        TextSelection.collapsed(offset: selection.start + wrapped.length);
+    controller.value = controller.value.copyWith(
+        text: text.replaceRange(selection.start, selection.end, wrapped),
+        selection: next,
+        composing: TextRange.empty);
+    setState(() {});
+    FocusScope.of(context).requestFocus(_questionFocus);
   }
 
   /// Swatches offered in the highlight menu (amber default + palette).
@@ -135,7 +189,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_question.text,
+              Text(Cloze.blanked(_question.text, 1),
                   textAlign: TextAlign.center,
                   style: Theme.of(ctx).textTheme.titleMedium),
               const SizedBox(height: 12),
@@ -179,10 +233,12 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
           children: [
             TextFormField(
               controller: _question,
+              focusNode: _questionFocus,
               decoration: const InputDecoration(
                   labelText: 'Question (front)',
                   border: OutlineInputBorder(),
-                  hintText: 'What is the entrypoint of a Flutter app?'),
+                  hintText:
+                      'Or write a cloze sentence like: The heart has {{c1::four}} chambers'),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Question is required' : null,
             ),
@@ -190,6 +246,12 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
             // Formatting toolbar: styles the answer's current selection.
             Row(
               children: [
+                IconButton(
+                  tooltip: 'Cloze: blank the selected text',
+                  icon: const Icon(Icons.visibility_off_rounded),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _wrapCloze,
+                ),
                 _formatButton(Icons.format_bold_rounded, 'Bold',
                     () => RichMarkup.toggleWrap(_answer, '**', '**')),
                 _formatButton(Icons.format_italic_rounded, 'Italic',
@@ -236,7 +298,10 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   border: OutlineInputBorder(),
                   hintText: 'The main() function, which calls runApp().'),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Answer is required' : null,
+                  (v == null || v.trim().isEmpty) &&
+                          !Cloze.hasCloze(_question.text)
+                      ? 'Answer is required, or add a cloze blank'
+                      : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -308,9 +373,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _question.text.isEmpty || _answer.text.isEmpty
-                        ? null
-                        : _preview,
+                    onPressed: _question.text.isEmpty ? null : _preview,
                     icon: const Icon(Icons.visibility_rounded),
                     label: const Text('Preview'),
                   ),
@@ -320,7 +383,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => Tts.speak(
-                          '${_question.text} ... ${RichMarkup.stripMarkup(_answer.text)}'),
+                          '${Cloze.stripped(_question.text)} ... ${RichMarkup.stripMarkup(_answer.text)}'),
                       icon: const Icon(Icons.volume_up_rounded),
                       label: const Text('Listen'),
                     ),

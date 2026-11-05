@@ -9,6 +9,7 @@ No account, no ads, no network access required. All data stays on the device.
 - Spaced repetition scheduler with Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors
 - Three study modes: flip cards, multiple choice, type the answer
 - Image cards, tags, notes
+- Cloze cards with Anki-style numbered deletions (`{{c1::text}}`); each deletion becomes its own card
 - Text to speech (optional)
 - Statistics: accuracy, learned cards, weekly activity, 12-week heatmap
 - Deck management: rename, delete, color, emoji or Lucide icon

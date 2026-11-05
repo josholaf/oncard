@@ -13,6 +13,9 @@ class Flashcard {
   List<String> tags;
   String? imagePath;
 
+  /// Cloze deletion group this card tests. 1 for non-cloze cards.
+  int clozeIndex;
+
   // Review state.
   /// Epoch milliseconds when this card should be reviewed next.
   int due;
@@ -30,6 +33,7 @@ class Flashcard {
     this.note = '',
     List<String>? tags,
     this.imagePath,
+    this.clozeIndex = 1,
     this.due = 0,
     this.stability = 0,
     this.ease = 2.3,
@@ -65,6 +69,7 @@ class Flashcard {
         'ease': ease,
         'reps': reps,
         'lapses': lapses,
+        'clozeIndex': clozeIndex,
       };
 
   factory Flashcard.fromJson(Map<String, dynamic> json) {
@@ -93,6 +98,7 @@ class Flashcard {
       ease: (json['ease'] as num?)?.toDouble() ?? 2.3,
       reps: (json['reps'] as int?) ?? 0,
       lapses: (json['lapses'] as int?) ?? 0,
+      clozeIndex: (json['clozeIndex'] as int?) ?? 1,
     );
   }
 }

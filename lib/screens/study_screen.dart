@@ -6,6 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../cloze.dart';
 import '../models.dart';
 import '../rich_text.dart';
 import '../scheduler.dart';
@@ -164,7 +165,19 @@ class _StudyScreenState extends State<StudyScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           back
-              ? Text.rich(
+              ? (Cloze.hasCloze(card.question)
+                  ? Text.rich(
+                      TextSpan(
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        children: Cloze.revealSpans(
+                            card.question,
+                            card.clozeIndex,
+                            Theme.of(context).textTheme.headlineSmall ??
+                                const TextStyle()),
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                  : Text.rich(
                   TextSpan(
                     style: Theme.of(context).textTheme.headlineSmall,
                     children: RichMarkup.parseSpans(card.answer,
@@ -172,9 +185,9 @@ class _StudyScreenState extends State<StudyScreen>
                             const TextStyle()),
                   ),
                   textAlign: TextAlign.center,
-                )
+                ))
               : Text(
-                  card.question,
+                  Cloze.blanked(card.question, card.clozeIndex),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
@@ -361,7 +374,7 @@ class _StudyScreenState extends State<StudyScreen>
             ),
             child: Center(
               child: Text(
-                card.question,
+                Cloze.blanked(card.question, card.clozeIndex),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
@@ -402,7 +415,7 @@ class _StudyScreenState extends State<StudyScreen>
           IconButton(
             tooltip: 'Listen',
             icon: const Icon(Icons.volume_up_rounded),
-            onPressed: () => Tts.speak(card.question),
+            onPressed: () => Tts.speak(Cloze.stripped(card.question)),
           ),
       ],
     );
@@ -423,7 +436,7 @@ class _StudyScreenState extends State<StudyScreen>
             ),
             child: Center(
               child: Text(
-                card.question,
+                Cloze.blanked(card.question, card.clozeIndex),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
