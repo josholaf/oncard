@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
@@ -43,10 +47,24 @@ class ProfileScreen extends StatelessWidget {
     if (ok == true) data.setDisplayName(controller.text.trim());
   }
 
+  Future<void> _pickPhoto(BuildContext context, AppData data) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 512, imageQuality: 85);
+    if (picked == null) return;
+    // Copy into the app documents dir so it survives temp cleanups.
+    final dir = await getApplicationDocumentsDirectory();
+    final dest = File(dir.path + '/profile-photo.jpg');
+    await File(picked.path).copy(dest.path);
+    data.setPhoto(dest.path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
     final cs = Theme.of(context).colorScheme;
+    final hasPhoto =
+        data.photoPath != null && File(data.photoPath!).existsSync();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -55,17 +73,51 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           Center(
-            child: CircleAvatar(
-              radius: 40,
-              backgroundColor: cs.primary,
-              child: Text(
-                (data.displayName.isEmpty ? 'G' : data.displayName[0])
-                    .toUpperCase(),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700),
-              ),
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => _pickPhoto(context, data),
+                  child: hasPhoto
+                      ? CircleAvatar(
+                          radius: 40,
+                          backgroundImage: FileImage(File(data.photoPath!)),
+                        )
+                      : CircleAvatar(
+                          radius: 40,
+                          backgroundColor: cs.primary,
+                          child: Text(
+                            (data.displayName.isEmpty
+                                    ? 'G'
+                                    : data.displayName[0])
+                                .toUpperCase(),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: () => _pickPhoto(context, data),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: cs.primary,
+                        border: Border.fromBorderSide(BorderSide(
+                            color: Theme.of(context)
+                                .scaffoldBackgroundColor,
+                            width: 2)),
+                      ),
+                      child: const Icon(Icons.photo_camera_rounded,
+                          size: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -115,6 +167,18 @@ class ProfileScreen extends StatelessWidget {
                   trailing: const Icon(Icons.edit_rounded, size: 20),
                   onTap: () => _editName(context, data),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined),
+                  title: Text(hasPhoto ? 'Change photo' : 'Add photo'),
+                  subtitle: const Text('Shown on your profile and the home screen'),
+                  onTap: () => _pickPhoto(context, data),
+                ),
+                if (hasPhoto)
+                  ListTile(
+                    leading: Icon(Icons.delete_outline_rounded, color: cs.error),
+                    title: const Text('Remove photo'),
+                    onTap: () => data.setPhoto(null),
+                  ),
                 if (data.interests.isNotEmpty)
                   ListTile(
                     leading: const Icon(Icons.interests_rounded),

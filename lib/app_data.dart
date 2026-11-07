@@ -23,6 +23,7 @@ class AppData extends ChangeNotifier {
   bool ttsEnabled = false;
   bool onboarded = false;
   String displayName = 'Guest';
+  String? photoPath;
   List<String> interests = <String>[];
   List<DayLog> history = <DayLog>[];
 
@@ -54,6 +55,8 @@ class AppData extends ChangeNotifier {
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
     onboarded = _prefs.getBool('onboarded') ?? false;
     displayName = _prefs.getString('oncard.name') ?? 'Guest';
+    final savedPhoto = _prefs.getString('oncard.photo');
+    photoPath = (savedPhoto == null || savedPhoto.isEmpty) ? null : savedPhoto;
     final rawInterests = _prefs.getString('oncard.interests');
     if (rawInterests != null && rawInterests.isNotEmpty) {
       try {
@@ -129,12 +132,21 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Stores the profile photo path. Pass null to remove it.
+  void setPhoto(String? path) {
+    photoPath = (path == null || path.isEmpty) ? null : path;
+    _prefs.setString('oncard.photo', path ?? '');
+    notifyListeners();
+  }
+
   /// Guest sign out: resets the profile and replays the onboarding.
   /// Study data is never touched.
   void signOutGuest() {
     displayName = 'Guest';
     interests = <String>[];
     onboarded = false;
+    photoPath = null;
+    _prefs.setString('oncard.photo', '');
     _prefs.setString('oncard.name', displayName);
     _prefs.setString('oncard.interests', jsonEncode(interests));
     _prefs.setBool('onboarded', false);
