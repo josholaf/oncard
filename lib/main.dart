@@ -91,24 +91,25 @@ class _RootShellState extends State<RootShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
+          // Filled rounded silhouettes, matching the reference set.
           NavigationDestination(
-              icon: Icon(Icons.home_outlined),
+              icon: Icon(Icons.home_rounded),
               selectedIcon: Icon(Icons.home_rounded),
               label: 'Home'),
           NavigationDestination(
-              icon: Icon(Icons.library_books_outlined),
-              selectedIcon: Icon(Icons.library_books_rounded),
+              icon: Icon(Icons.laptop_rounded),
+              selectedIcon: Icon(Icons.laptop_rounded),
               label: 'Library'),
           NavigationDestination(
-              icon: Icon(Icons.add_circle_outline),
-              selectedIcon: Icon(Icons.add_circle_rounded),
+              icon: Icon(Icons.library_add_rounded),
+              selectedIcon: Icon(Icons.library_add_rounded),
               label: 'Create'),
           NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(Icons.insights_rounded),
+              icon: Icon(Icons.insert_chart_rounded),
+              selectedIcon: Icon(Icons.insert_chart_rounded),
               label: 'Stats'),
           NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
+              icon: Icon(Icons.settings_rounded),
               selectedIcon: Icon(Icons.settings_rounded),
               label: 'Settings'),
         ],
