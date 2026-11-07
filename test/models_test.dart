@@ -98,9 +98,9 @@ void main() {
     expect(copy.correct, 10);
   });
 
-  test('sample decks seed six decks with cards', () {
+  test('sample decks seed one deck with cards', () {
     final decks = SampleDecks.build();
-    expect(decks.length, 6);
+    expect(decks.length, 1);
     for (final deck in decks) {
       expect(deck.cards, isNotEmpty);
     }
