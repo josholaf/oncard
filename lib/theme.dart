@@ -28,9 +28,9 @@ class AppPalette {
   // Dark mode: true black background so the app blends with the
   // Android system navigation area; cards sit one step lighter.
   static const Color darkBackground = Color(0xFF000000);
-  static const Color darkSurface = Color(0xFF141414);
+  static const Color darkSurface = Color(0xFF1A1B21);
   static const Color darkTextMain = Color(0xFFECEAF4);
-  static const Color darkTextMuted = Color(0xFFC8C6D4);
+  static const Color darkTextMuted = Color(0xFFD5D3DF);
 }
 
 const deckPalette = <Color>[
@@ -250,7 +250,7 @@ ThemeData buildDarkTheme(TextTheme base) {
     brightness: Brightness.dark,
     background: AppPalette.darkBackground,
     surface: AppPalette.darkSurface,
-    containerHighest: const Color(0xFF232329),
+    containerHighest: const Color(0xFF2B2C34),
     textMain: AppPalette.darkTextMain,
     textMuted: AppPalette.darkTextMuted,
     navBarColor: AppPalette.darkBackground,
