@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../models.dart';
+import '../theme.dart';
 import '../update_bar.dart';
 import '../widgets.dart';
 import 'profile_screen.dart';
@@ -41,6 +44,11 @@ class HomeScreen extends StatelessWidget {
     final Deck? nextDeck = data.nextDeckToStudy;
     final goalProgress =
         data.dailyGoal == 0 ? 0.0 : data.reviewedToday / data.dailyGoal;
+    // Dark mode: a light lavender card with deep purple text reads
+    // far better than white text on dark purple.
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final heroBg = dark ? lightenForDark(cs.primary, 0.22) : cs.primary;
+    final heroFg = dark ? const Color(0xFF231243) : cs.onPrimary;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -70,18 +78,23 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute<void>(
                       builder: (_) => const ProfileScreen())),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: cs.primary.withOpacity(0.12),
-                child: Text(
-                  (data.displayName.isEmpty
-                          ? 'G'
-                          : data.displayName[0])
-                      .toUpperCase(),
-                  style: TextStyle(
-                      color: cs.primary, fontWeight: FontWeight.w700),
-                ),
-              ),
+              child: (data.photoPath != null &&
+                      File(data.photoPath!).existsSync())
+                  ? CircleAvatar(
+                      radius: 22,
+                      backgroundImage: FileImage(File(data.photoPath!)))
+                  : CircleAvatar(
+                      radius: 22,
+                      backgroundColor: cs.primary.withOpacity(0.12),
+                      child: Text(
+                        (data.displayName.isEmpty
+                                ? 'G'
+                                : data.displayName[0])
+                            .toUpperCase(),
+                        style: TextStyle(
+                            color: cs.primary, fontWeight: FontWeight.w700),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -100,7 +113,7 @@ class HomeScreen extends StatelessWidget {
 
         // Hero card: workload, goal ring and streak in one glance.
         Card(
-          color: cs.primary,
+          color: heroBg,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -112,14 +125,14 @@ class HomeScreen extends StatelessWidget {
                       child: Text('Today',
                           style:
                               Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: cs.onPrimary.withOpacity(0.9))),
+                                  color: heroFg.withOpacity(0.9))),
                     ),
                     Icon(Icons.local_fire_department_rounded,
                         size: 18, color: Color(0xFFE8B95D)),
                     const SizedBox(width: 4),
                     Text('${data.streak}',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: cs.onPrimary)),
+                            color: heroFg)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -129,9 +142,9 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _bigStat(context, data.totalDue, 'Due'),
+                          _bigStat(context, heroFg, data.totalDue, 'Due'),
                           const SizedBox(height: 12),
-                          _bigStat(context, data.totalNew, 'New'),
+                          _bigStat(context, heroFg, data.totalNew, 'New'),
                         ],
                       ),
                     ),
@@ -148,8 +161,8 @@ class HomeScreen extends StatelessWidget {
                               value: goalProgress.clamp(0.0, 1.0).toDouble(),
                               strokeWidth: 7,
                               strokeCap: StrokeCap.round,
-                              color: cs.onPrimary,
-                              backgroundColor: cs.onPrimary.withOpacity(0.2),
+                              color: heroFg,
+                              backgroundColor: heroFg.withOpacity(0.15),
                             ),
                           ),
                           Column(
@@ -160,14 +173,14 @@ class HomeScreen extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleLarge
-                                      ?.copyWith(color: cs.onPrimary)),
+                                      ?.copyWith(color: heroFg)),
                               Text('of goal',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
                                       ?.copyWith(
-                                          color: cs.onPrimary
-                                              .withOpacity(0.85))),
+                                          color: heroFg
+                                              .withOpacity(0.75))),
                             ],
                           ),
                         ],
@@ -180,8 +193,8 @@ class HomeScreen extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                        backgroundColor: cs.onPrimary,
-                        foregroundColor: cs.primary),
+                        backgroundColor: heroFg,
+                        foregroundColor: heroBg),
                     onPressed: nextDeck == null
                         ? null
                         : () => _openDeck(context, nextDeck),
@@ -318,7 +331,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _bigStat(BuildContext context, int value, String label) {
+  Widget _bigStat(BuildContext context, Color fg, int value, String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,12 +339,11 @@ class HomeScreen extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .headlineMedium
-                ?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
+                ?.copyWith(color: fg)),
         Text(label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color:
-                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.9))),
+                color: fg.withOpacity(0.9))),
       ],
     );
   }
