@@ -6,6 +6,7 @@ import 'app_data.dart';
 import 'screens/create_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/library_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/quick_add_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/stats_screen.dart';
@@ -35,7 +36,9 @@ class OncardApp extends StatelessWidget {
             theme: light,
             darkTheme: dark,
             themeMode: data.themeMode,
-            home: const RootShell(),
+            home: data.onboarded
+                ? const RootShell()
+                : const OnboardingScreen(),
           );
         },
       ),

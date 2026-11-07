@@ -21,6 +21,9 @@ class AppData extends ChangeNotifier {
   String lastStudyDay = '';
   int dailyGoal = 20;
   bool ttsEnabled = false;
+  bool onboarded = false;
+  String displayName = 'Guest';
+  List<String> interests = <String>[];
   List<DayLog> history = <DayLog>[];
 
   /// Latest release found by the update checker (null = up to date).
@@ -49,6 +52,18 @@ class AppData extends ChangeNotifier {
     lastStudyDay = _prefs.getString('oncard.lastDay') ?? '';
     dailyGoal = _prefs.getInt('oncard.goal') ?? 20;
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
+    onboarded = _prefs.getBool('onboarded') ?? false;
+    displayName = _prefs.getString('oncard.name') ?? 'Guest';
+    final rawInterests = _prefs.getString('oncard.interests');
+    if (rawInterests != null && rawInterests.isNotEmpty) {
+      try {
+        interests = (jsonDecode(rawInterests) as List<dynamic>)
+            .map((e) => e as String)
+            .toList();
+      } catch (_) {
+        interests = <String>[];
+      }
+    }
     final savedTheme = _prefs.getString('oncard.theme');
     themeMode = savedTheme == 'light'
         ? ThemeMode.light
@@ -94,6 +109,35 @@ class AppData extends ChangeNotifier {
   void setTtsEnabled(bool enabled) {
     ttsEnabled = enabled;
     _prefs.setBool('oncard.tts', enabled);
+    notifyListeners();
+  }
+
+  /// Finishes onboarding and remembers the chosen profile.
+  void completeOnboarding(String name, List<String> selected) {
+    displayName = name.isEmpty ? 'Guest' : name;
+    interests = selected;
+    onboarded = true;
+    _prefs.setBool('onboarded', true);
+    _prefs.setString('oncard.name', displayName);
+    _prefs.setString('oncard.interests', jsonEncode(interests));
+    notifyListeners();
+  }
+
+  void setDisplayName(String name) {
+    displayName = name.isEmpty ? 'Guest' : name;
+    _prefs.setString('oncard.name', displayName);
+    notifyListeners();
+  }
+
+  /// Guest sign out: resets the profile and replays the onboarding.
+  /// Study data is never touched.
+  void signOutGuest() {
+    displayName = 'Guest';
+    interests = <String>[];
+    onboarded = false;
+    _prefs.setString('oncard.name', displayName);
+    _prefs.setString('oncard.interests', jsonEncode(interests));
+    _prefs.setBool('onboarded', false);
     notifyListeners();
   }
 

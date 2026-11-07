@@ -5,6 +5,7 @@ import '../app_data.dart';
 import '../models.dart';
 import '../update_bar.dart';
 import '../widgets.dart';
+import 'profile_screen.dart';
 import 'study_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -44,13 +45,46 @@ class HomeScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       children: [
-        Text(greeting,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: cs.onSurfaceVariant)),
-        const SizedBox(height: 2),
-        Text('Oncard', style: Theme.of(context).textTheme.headlineMedium),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(greeting,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
+                  const SizedBox(height: 2),
+                  Text(data.displayName,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                      builder: (_) => const ProfileScreen())),
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: cs.primary.withOpacity(0.12),
+                child: Text(
+                  (data.displayName.isEmpty
+                          ? 'G'
+                          : data.displayName[0])
+                      .toUpperCase(),
+                  style: TextStyle(
+                      color: cs.primary, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 4),
         Text(
             '${now.weekday == 7 ? 'Sunday' : _weekday(now.weekday)}, ${now.day} ${_month(now.month)}',

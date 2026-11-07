@@ -30,29 +30,6 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
-          _header(context, 'Appearance'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text('Auto'),
-                    icon: Icon(Icons.brightness_auto_rounded)),
-                ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text('Light'),
-                    icon: Icon(Icons.light_mode_rounded)),
-                ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text('Dark'),
-                    icon: Icon(Icons.dark_mode_rounded)),
-              ],
-              selected: {data.themeMode},
-              onSelectionChanged: (selection) =>
-                  data.setThemeMode(selection.first),
-            ),
-          ),
           _header(context, 'Study'),
           Card(
             margin: EdgeInsets.zero,
