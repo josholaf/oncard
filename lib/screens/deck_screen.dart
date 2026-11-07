@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../emoji_picker.dart';
 import '../import_export.dart';
 import '../rich_text.dart';
 import '../widgets.dart';
@@ -96,11 +97,23 @@ class DeckScreen extends StatelessWidget {
                 case 'import-tsv':
                   await importCsvFile(context, data, deckId, tsv: true);
                   break;
-                case 'export':
-                  final file = await exportDeckCsv(deck);
+                case 'share':
+                  final ok = await shareDeckCsv(deck);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Exported to ${file.path}')));
+                        content: Text(ok
+                            ? 'Shared ${deck.name} as CSV'
+                            : 'Sharing is available on Android only.')));
+                  }
+                  break;
+                case 'icon':
+                  final icon = await showEmojiPickerSheet(context,
+                      current: deck.icon);
+                  if (icon != null) {
+                    data.updateDeck(deckId,
+                        name: deck.name,
+                        icon: icon,
+                        colorIndex: deck.colorIndex);
                   }
                   break;
                 case 'rename':
@@ -117,7 +130,8 @@ class DeckScreen extends StatelessWidget {
               PopupMenuItem(
                   value: 'import-tsv', child: Text('Import TSV')),
               PopupMenuItem(
-                  value: 'export', child: Text('Export as CSV')),
+                  value: 'share', child: Text('Share as CSV')),
+              PopupMenuItem(value: 'icon', child: Text('Edit icon')),
               PopupMenuItem(value: 'rename', child: Text('Rename deck')),
               PopupMenuItem(value: 'delete', child: Text('Delete deck')),
             ],

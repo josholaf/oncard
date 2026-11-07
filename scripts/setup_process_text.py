@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""Wires the Android text-selection quick-add flow into the freshly
-generated android/ folder.
+"""Wires the Android text-selection and file-sharing features into the
+freshly generated android/ folder.
 
 The repo does not commit android/; CI regenerates it with
 `flutter create --platforms=android --project-name=oncard .` and then
-runs this script. It does two things:
+runs this script. It does three things:
 
 1. Adds a PROCESS_TEXT intent filter to the launch activity so that
    Oncard shows up in Android's text-selection menu.
-2. Installs the custom MainActivity that hands the selected text to
-   Flutter over the 'oncard/share' method channel.
+2. Registers a FileProvider so decks can be shared as CSV files
+   through the Android share sheet.
+3. Installs the custom MainActivity that implements both features
+   over the 'oncard/share' method channel.
 """
 import io
+import os
 
 MANIFEST = 'android/app/src/main/AndroidManifest.xml'
 ACTIVITY = ('android/app/src/main/kotlin/com/example/oncard/'
             'MainActivity.kt')
 OVERRIDE = 'android_override/MainActivity.kt'
+FILE_PATHS = 'android/app/src/main/res/xml/file_paths.xml'
 
 manifest = io.open(MANIFEST, encoding='utf-8').read()
 if 'PROCESS_TEXT' not in manifest:
@@ -34,7 +38,34 @@ if 'PROCESS_TEXT' not in manifest:
 else:
     print('manifest: already patched')
 
+manifest = io.open(MANIFEST, encoding='utf-8').read()
+if 'FileProvider' not in manifest:
+    provider = (
+        '        <provider\n'
+        '            android:name="androidx.core.content.FileProvider"\n'
+        '            android:authorities="${applicationId}.fileprovider"\n'
+        '            android:exported="false"\n'
+        '            android:grantUriPermissions="true">\n'
+        '            <meta-data\n'
+        '                android:name="android.support.FILE_PROVIDER_PATHS"\n'
+        '                android:resource="@xml/file_paths" />\n'
+        '        </provider>\n'
+    )
+    patched = manifest.replace('</application>', provider + '</application>', 1)
+    io.open(MANIFEST, 'w', encoding='utf-8').write(patched)
+    print('manifest: FileProvider added')
+else:
+    print('manifest: FileProvider already present')
+
 with io.open(OVERRIDE, encoding='utf-8') as f:
     source = f.read()
 io.open(ACTIVITY, 'w', encoding='utf-8').write(source)
 print('MainActivity.kt: installed')
+
+os.makedirs(os.path.dirname(FILE_PATHS), exist_ok=True)
+with io.open(FILE_PATHS, 'w', encoding='utf-8') as f:
+    f.write('<?xml version="1.0" encoding="utf-8"?>\n'
+            '<paths>\n'
+            '    <cache-path name="shared" path="." />\n'
+            '</paths>\n')
+print('file_paths.xml: written')

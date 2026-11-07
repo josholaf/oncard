@@ -304,9 +304,10 @@ const Map<String, String> emojiKeywords = <String, String>{
   '🆚': 'versus vs',
 };
 
-/// Opens a rounded bottom sheet with a searchable emoji and icon grid.
-/// Returns the chosen emoji, a 'lucide:<name>' icon reference, or null
-/// when dismissed.
+/// Opens the icon library: a searchable emoji and Lucide icon grid with
+/// a color row underneath. Returns the chosen icon, optionally
+/// suffixed with '@#RRGGBB' when a color was picked, or null when
+/// dismissed without a choice.
 Future<String?> showEmojiPickerSheet(BuildContext context,
     {String current = '👋'}) {
   return showModalBottomSheet<String>(
@@ -316,22 +317,42 @@ Future<String?> showEmojiPickerSheet(BuildContext context,
     builder: (sheetContext) => Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
-      child: _EmojiPickerSheet(current: current),
+      child: _IconLibrarySheet(current: current),
     ),
   );
 }
 
-class _EmojiPickerSheet extends StatefulWidget {
-  final String current;
-  const _EmojiPickerSheet({required this.current});
+/// Swatches offered under the icon grid.
+const List<String> iconSwatches = <String>[
+  '#F5F5F5', // white
+  '#9E9E9E', // gray
+  '#F44336', // red
+  '#FF9800', // orange
+  '#FFEB3B', // yellow
+  '#4CAF50', // green
+  '#009688', // teal
+  '#2196F3', // blue
+  '#E91E63', // pink
+];
 
-  @override
-  State<_EmojiPickerSheet> createState() => _EmojiPickerSheetState();
+Color _hexColor(String hex) {
+  final value = int.tryParse('FF' + hex.substring(1), radix: 16);
+  return Color(value ?? 0xFFFFFFFF);
 }
 
-class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
+class _IconLibrarySheet extends StatefulWidget {
+  final String current;
+  const _IconLibrarySheet({required this.current});
+
+  @override
+  State<_IconLibrarySheet> createState() => _IconLibrarySheetState();
+}
+
+class _IconLibrarySheetState extends State<_IconLibrarySheet> {
   final _search = TextEditingController();
   bool _icons = false;
+  String? _selected;
+  String? _color;
   List<String> _emojiMatches = emojiKeywords.keys.toList(growable: false);
   List<String> _iconMatches = kLucideIcons.keys.toList(growable: false);
 
@@ -339,6 +360,13 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
   void initState() {
     super.initState();
     if (widget.current.startsWith('lucide:')) _icons = true;
+    final at = widget.current.indexOf('@');
+    if (at == -1) {
+      _selected = widget.current;
+    } else {
+      _selected = widget.current.substring(0, at);
+      _color = widget.current.substring(at + 1);
+    }
     _search.addListener(_filter);
   }
 
@@ -364,13 +392,18 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
     });
   }
 
+  void _done() {
+    if (_selected == null) return;
+    Navigator.pop(context, _selected! + (_color == null ? '' : '@' + _color!));
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final matches = _icons ? _iconMatches : _emojiMatches;
     return SafeArea(
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.65,
+        height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           children: [
             Padding(
@@ -418,35 +451,71 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
                       itemBuilder: (context, i) {
                         final item = matches[i];
                         final value = _icons ? 'lucide:' + item : item;
-                        final selected = value == widget.current;
+                        final selected = value == _selected;
                         return InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => Navigator.pop(context, value),
+                          onTap: () => setState(() => _selected = value),
                           child: Container(
                             margin: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              color: selected
-                                  ? cs.primaryContainer
-                                  : null,
-                              border: selected
-                                  ? null
-                                  : Border.all(color: cs.outline),
+                              color:
+                                  selected ? cs.primaryContainer : null,
                             ),
                             child: Center(
                               child: _icons
                                   ? LucideIcon(
                                       name: item,
-                                      size: 24,
+                                      size: 26,
                                       color: cs.onSurface)
                                   : Text(item,
                                       style:
-                                          const TextStyle(fontSize: 24)),
+                                          const TextStyle(fontSize: 26)),
                             ),
                           ),
                         );
                       },
                     ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final hex in iconSwatches)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(22),
+                          onTap: () => setState(() => _color = hex),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _hexColor(hex),
+                              border: _color == hex
+                                  ? Border.all(color: cs.primary, width: 3)
+                                  : Border.all(color: cs.outlineVariant),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _selected == null ? null : _done,
+                  child: const Text('Done'),
+                ),
+              ),
             ),
           ],
         ),

@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app_data.dart';
 import 'models.dart';
+import 'share.dart';
 
 /// CSV/TSV import. Columns: question,answer,note,tags (tags split by ';').
 Future<int> importCsvFile(BuildContext context, AppData data, String deckId,
@@ -79,6 +80,18 @@ Future<File> exportDeckCsv(Deck deck) async {
   ];
   await file.writeAsString(const ListToCsvConverter().convert(rows));
   return file;
+}
+
+/// Share one deck as a CSV file through the Android share sheet.
+Future<bool> shareDeckCsv(Deck deck) async {
+  try {
+    final file = await exportDeckCsv(deck);
+    final content = await file.readAsString();
+    final name = file.path.split(Platform.pathSeparator).last;
+    return DeckShare.shareFile(name, content);
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Write a full JSON backup of every deck plus study history.

@@ -151,6 +151,23 @@ class StatCard extends StatelessWidget {
   }
 }
 
+/// Deck icons may carry a color suffix: 'lucide:book-2@#FF9800'.
+/// These helpers split the icon from its optional color.
+String iconBase(String icon) {
+  final at = icon.indexOf('@');
+  return at == -1 ? icon : icon.substring(0, at);
+}
+
+/// The color suffix of a deck icon, or null when it has none.
+Color? iconTint(String icon) {
+  final at = icon.indexOf('@');
+  if (at == -1) return null;
+  final hex = icon.substring(at + 1);
+  if (hex.length != 7 || !hex.startsWith('#')) return null;
+  final value = int.tryParse('FF' + hex.substring(1), radix: 16);
+  return value == null ? null : Color(value);
+}
+
 /// Renders a deck icon that is either an emoji character or a
 /// 'lucide:<name>' reference from the Lucide icon set.
 class DeckIcon extends StatelessWidget {
@@ -161,10 +178,12 @@ class DeckIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (icon.startsWith('lucide:')) {
-      return LucideIcon(name: icon.substring(7), size: size, color: color);
+    final base = iconBase(icon);
+    final tint = color ?? iconTint(icon);
+    if (base.startsWith('lucide:')) {
+      return LucideIcon(name: base.substring(7), size: size, color: tint);
     }
-    return Text(icon, style: TextStyle(fontSize: size, color: color));
+    return Text(base, style: TextStyle(fontSize: size, color: tint));
   }
 }
 
@@ -180,7 +199,8 @@ class DeckAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: deckPalette[colorIndex % deckPalette.length],
+      backgroundColor:
+          iconTint(icon) ?? deckPalette[colorIndex % deckPalette.length],
       child: DeckIcon(icon: icon, size: size * 0.55, color: Colors.white),
     );
   }

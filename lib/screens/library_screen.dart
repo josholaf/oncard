@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../emoji_picker.dart';
+import '../import_export.dart';
 import '../models.dart';
 import '../widgets.dart';
 import 'create_screen.dart';
@@ -21,7 +23,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   bool _favoritesOnly = false;
   bool _grid = false;
   _SortBy _sort = _SortBy.recent;
-  String? _selectedId;
 
   List<Deck> _visible(AppData data) {
     var decks = <Deck>[...data.decks];
@@ -46,16 +47,43 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return decks;
   }
 
-  Future<void> _confirmDelete(BuildContext context, AppData data) async {
-    final id = _selectedId;
-    if (id == null) return;
-    final deck = data.deckById(id);
+  Future<void> _renameDeck(BuildContext context, AppData data, Deck deck) async {
+    final controller = TextEditingController(text: deck.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename deck'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Deck name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    if (name != null && name.isNotEmpty) {
+      data.updateDeck(deck.id,
+          name: name, icon: deck.icon, colorIndex: deck.colorIndex);
+    }
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, AppData data, Deck deck) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete deck?'),
         content: Text(
-            'Delete \"' + (deck?.name ?? 'this deck') + '\" and all its cards? This cannot be undone.'),
+            'Delete "' +
+                deck.name +
+                '" and all its cards? This cannot be undone.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -66,8 +94,87 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ],
       ),
     );
-    if (ok == true) data.deleteDeck(id);
-    if (mounted) setState(() => _selectedId = null);
+    if (ok == true) data.deleteDeck(deck.id);
+  }
+
+  /// Long-press menu for one deck, matching the reference design:
+  /// rename, share as CSV, edit icon, delete.
+  Future<void> _deckMenu(
+      BuildContext context, AppData data, Deck deck) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final sheetCs = Theme.of(ctx).colorScheme;
+        Widget row(String value, IconData icon, String label,
+            {Color? color}) {
+          return ListTile(
+            leading: Icon(icon, color: color ?? sheetCs.onSurfaceVariant),
+            title: Text(label,
+                style: TextStyle(
+                    color: color ?? sheetCs.onSurface,
+                    fontWeight: FontWeight.w600)),
+            onTap: () => Navigator.pop(ctx, value),
+          );
+        }
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                child: Row(
+                  children: [
+                    DeckAvatar(
+                        icon: deck.icon,
+                        colorIndex: deck.colorIndex,
+                        size: 40),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(deck.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(ctx).textTheme.titleMedium),
+                    ),
+                  ],
+                ),
+              ),
+              row('rename', Icons.drive_file_rename_outline_rounded, 'Rename'),
+              row('share', Icons.ios_share_rounded, 'Share as CSV'),
+              row('icon', Icons.emoji_objects_outlined, 'Edit icon'),
+              row('delete', Icons.delete_rounded, 'Delete',
+                  color: sheetCs.error),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+    if (action == null) return;
+    switch (action) {
+      case 'rename':
+        await _renameDeck(context, data, deck);
+        break;
+      case 'share':
+        final ok = await shareDeckCsv(deck);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(ok
+                  ? 'Shared ' + deck.name + ' as CSV'
+                  : 'Sharing is available on Android only.')));
+        }
+        break;
+      case 'icon':
+        final icon = await showEmojiPickerSheet(context, current: deck.icon);
+        if (icon != null) {
+          data.updateDeck(deck.id,
+              name: deck.name, icon: icon, colorIndex: deck.colorIndex);
+        }
+        break;
+      case 'delete':
+        await _confirmDelete(context, data, deck);
+        break;
+    }
   }
 
   void _openDeck(BuildContext context, String id) {
@@ -86,32 +193,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
-        actions: _selectedId != null
-            ? [
-                IconButton(
-                  tooltip: 'Delete deck',
-                  icon: const Icon(Icons.delete_rounded),
-                  onPressed: () => _confirmDelete(context, data),
-                ),
-                IconButton(
-                  tooltip: 'Cancel selection',
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => setState(() => _selectedId = null),
-                ),
-              ]
-            : [
-                IconButton(
-                  tooltip: _grid ? 'List view' : 'Grid view',
-                  icon: Icon(
-                      _grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
-                  onPressed: () => setState(() => _grid = !_grid),
-                ),
-                IconButton(
-                  tooltip: 'New deck',
-                  icon: const Icon(Icons.add_rounded),
-                  onPressed: () => showNewDeckSheet(context),
-                ),
-              ],
+        actions: [
+          IconButton(
+            tooltip: _grid ? 'List view' : 'Grid view',
+            icon: Icon(
+                _grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
+            onPressed: () => setState(() => _grid = !_grid),
+          ),
+          IconButton(
+            tooltip: 'New deck',
+            icon: const Icon(Icons.add_rounded),
+            onPressed: () => showNewDeckSheet(context),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -194,17 +288,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget _deckTile(
       BuildContext context, AppData data, Deck deck, bool grid) {
     final cs = Theme.of(context).colorScheme;
-    final selected = _selectedId == deck.id;
     final inner = InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        if (_selectedId != null) {
-          setState(() => _selectedId = selected ? null : deck.id);
-        } else {
-          _openDeck(context, deck.id);
-        }
-      },
-      onLongPress: () => setState(() => _selectedId = deck.id),
+      onTap: () => _openDeck(context, deck.id),
+      onLongPress: () => _deckMenu(context, data, deck),
       child: Padding(
         padding: EdgeInsets.all(grid ? 14 : 12),
         child: grid
@@ -283,7 +370,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
     return Card(
       margin: grid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
-      color: selected ? cs.primaryContainer : null,
+      color: cs.surfaceContainerLow,
       child: inner,
     );
   }
