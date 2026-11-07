@@ -1,8 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Round dark-gray background. -->
   <circle cx="256" cy="256" r="256" fill="#3B4048"/>
-  <!-- Small circle (sun) above the peak. -->
-  <circle cx="184" cy="150" r="30" fill="#FFFFFF"/>
-  <!-- Stylized two-peak mountain. -->
-  <path fill="#FFFFFF" d="M72 392 208 200 288 312 344 240 440 392Z"/>
+  <!-- Back card. -->
+  <rect x="86" y="106" width="300" height="224" rx="36" fill="#FFFFFF" transform="rotate(-10 236 218)"/>
+  <!-- Front card. -->
+  <rect x="126" y="156" width="300" height="224" rx="36" fill="#FFFFFF" transform="rotate(-10 276 268)"/>
+  <!-- Text stripes on the front card. -->
+  <g transform="rotate(-10 276 268)">
+    <rect x="166" y="216" width="200" height="26" rx="13" fill="#3B4048"/>
+    <rect x="166" y="258" width="160" height="26" rx="13" fill="#3B4048"/>
+    <rect x="166" y="300" width="120" height="26" rx="13" fill="#3B4048"/>
+  </g>
 </svg>
