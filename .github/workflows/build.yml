@@ -2,7 +2,7 @@ name: Build Oncard (Android + Windows)
 
 on:
   push:
-    branches: [main, 'v*']
+    branches: [main, 'v*', 'release/*']
     tags: ['v*']
   workflow_dispatch:
 
@@ -73,9 +73,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk Oncard.apk
-          gh release create "${GITHUB_REF_NAME}" \
+          VERSION="${GITHUB_REF_NAME#release/}"
+          gh release create "$VERSION" \
             --target "${GITHUB_SHA}" \
-            --title "Oncard ${GITHUB_REF_NAME}" \
+            --title "Oncard $VERSION" \
             --generate-notes \
             Oncard.apk
 
@@ -117,7 +118,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for i in $(seq 1 12); do
-            gh release upload "$GITHUB_REF_NAME" Oncard-Windows-x64.zip && exit 0
+            gh release upload "${GITHUB_REF_NAME#release/}" Oncard-Windows-x64.zip && exit 0
             sleep 30
           done
           exit 1
