@@ -74,11 +74,15 @@ jobs:
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk Oncard.apk
           VERSION="${GITHUB_REF_NAME#release/}"
-          gh release create "$VERSION" \
-            --target "${GITHUB_SHA}" \
-            --title "Oncard $VERSION" \
-            --generate-notes \
-            Oncard.apk
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release upload "$VERSION" Oncard.apk --clobber
+          else
+            gh release create "$VERSION" \
+              --target "${GITHUB_SHA}" \
+              --title "Oncard $VERSION" \
+              --generate-notes \
+              Oncard.apk
+          fi
 
   windows:
     if: github.ref_name != 'main'
@@ -112,13 +116,20 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath 'Oncard-Windows-x64.zip'
 
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $version = "${env:GITHUB_REF_NAME}".Replace('release/', '').TrimStart('v')
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$version" 'scripts\oncard.iss'
+
       - name: Attach Windows build to release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           for i in $(seq 1 12); do
-            gh release upload "${GITHUB_REF_NAME#release/}" Oncard-Windows-x64.zip && exit 0
+            gh release upload "${GITHUB_REF_NAME#release/}" Oncard-Windows-x64.zip installer/Oncard-Setup.exe --clobber && exit 0
             sleep 30
           done
           exit 1
