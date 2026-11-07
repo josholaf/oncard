@@ -87,7 +87,9 @@ jobs:
   windows:
     if: github.ref_name != 'main'
     needs: build
-    runs-on: windows-latest
+    # Pin the 2022 image: it ships the Visual Studio toolchain that
+    # Flutter 3.24.5 expects. windows-latest moved on to a newer one.
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
