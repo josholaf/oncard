@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import 'models.dart';
 import 'sample_decks.dart';
+import 'theme.dart';
 import 'scheduler.dart';
 
 const uuid = Uuid();
@@ -17,6 +18,7 @@ class AppData extends ChangeNotifier {
   final SharedPreferences _prefs;
   List<Deck> decks = <Deck>[];
   ThemeMode themeMode = ThemeMode.system;
+  AppThemeStyle themeStyle = AppThemeStyle.standard;
   int streak = 0;
   String lastStudyDay = '';
   int dailyGoal = 20;
@@ -53,6 +55,9 @@ class AppData extends ChangeNotifier {
     themeMode = savedTheme == 'light'
         ? ThemeMode.light
         : (savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.system);
+    themeStyle = _prefs.getString('oncard.accent') == 'green'
+        ? AppThemeStyle.green
+        : AppThemeStyle.standard;
     final rawHistory = _prefs.getString('oncard.history');
     if (rawHistory != null && rawHistory.isNotEmpty) {
       try {
@@ -82,6 +87,13 @@ class AppData extends ChangeNotifier {
         mode == ThemeMode.light
             ? 'light'
             : (mode == ThemeMode.dark ? 'dark' : 'system'));
+    notifyListeners();
+  }
+
+  void setThemeStyle(AppThemeStyle style) {
+    themeStyle = style;
+    _prefs.setString('oncard.accent',
+        style == AppThemeStyle.green ? 'green' : 'standard');
     notifyListeners();
   }
 

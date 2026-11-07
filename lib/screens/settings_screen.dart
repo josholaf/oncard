@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
+import '../theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -51,6 +52,25 @@ class SettingsScreen extends StatelessWidget {
               selected: {data.themeMode},
               onSelectionChanged: (selection) =>
                   data.setThemeMode(selection.first),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<AppThemeStyle>(
+              segments: const [
+                ButtonSegment(
+                    value: AppThemeStyle.standard,
+                    label: Text('Default'),
+                    icon: Icon(Icons.colorize_rounded)),
+                ButtonSegment(
+                    value: AppThemeStyle.green,
+                    label: Text('Green'),
+                    icon: Icon(Icons.eco_rounded)),
+              ],
+              selected: {data.themeStyle},
+              onSelectionChanged: (selection) =>
+                  data.setThemeStyle(selection.first),
             ),
           ),
 

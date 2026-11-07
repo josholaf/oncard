@@ -38,10 +38,12 @@ class OncardApp extends StatelessWidget {
       create: (_) => AppData(prefs),
       child: Consumer<AppData>(
         builder: (context, data, _) {
-          final light =
-              buildLightTheme(_nunito(ThemeData.light().textTheme));
-          final dark =
-              buildDarkTheme(_nunito(ThemeData.dark().textTheme));
+          final light = buildLightTheme(
+              _nunito(ThemeData.light().textTheme),
+              style: data.themeStyle);
+          final dark = buildDarkTheme(
+              _nunito(ThemeData.dark().textTheme),
+              style: data.themeStyle);
           return MaterialApp(
             title: 'Oncard',
             debugShowCheckedModeBanner: false,
