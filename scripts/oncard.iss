@@ -11,7 +11,9 @@ AppPublisher=josholaf
 DefaultDirName={autopf}\Oncard
 DefaultGroupName=Oncard
 Output=Oncard-Setup.exe
-OutputDir=installer
+; OutputDir is resolved relative to the script file, so anchor it
+; at the repository root: <root>/installer.
+OutputDir={#SourcePath}\..\installer
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
