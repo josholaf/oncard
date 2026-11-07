@@ -47,7 +47,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return decks;
   }
 
-  Future<void> _renameDeck(BuildContext context, AppData data, Deck deck) async {
+  Future<void> _renameDeck(AppData data, Deck deck) async {
     final controller = TextEditingController(text: deck.name);
     final name = await showDialog<String>(
       context: context,
@@ -74,16 +74,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  Future<void> _confirmDelete(
-      BuildContext context, AppData data, Deck deck) async {
+  Future<void> _confirmDelete(AppData data, Deck deck) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete deck?'),
         content: Text(
-            'Delete "' +
-                deck.name +
-                '" and all its cards? This cannot be undone.'),
+            'Delete "${deck.name}" and all its cards? This cannot be undone.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -99,8 +96,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   /// Long-press menu for one deck, matching the reference design:
   /// rename, share as CSV, edit icon, delete.
-  Future<void> _deckMenu(
-      BuildContext context, AppData data, Deck deck) async {
+  Future<void> _deckMenu(AppData data, Deck deck) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -151,16 +147,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
       },
     );
     if (action == null) return;
+    if (!mounted) return;
     switch (action) {
       case 'rename':
-        await _renameDeck(context, data, deck);
+        await _renameDeck(data, deck);
         break;
       case 'share':
         final ok = await shareDeckCsv(deck);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(ok
-                  ? 'Shared ' + deck.name + ' as CSV'
+                  ? 'Shared ${deck.name} as CSV'
                   : 'Sharing is available on Android only.')));
         }
         break;
@@ -172,7 +169,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         }
         break;
       case 'delete':
-        await _confirmDelete(context, data, deck);
+        await _confirmDelete(data, deck);
         break;
     }
   }
@@ -291,7 +288,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final inner = InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () => _openDeck(context, deck.id),
-      onLongPress: () => _deckMenu(context, data, deck),
+      onLongPress: () => _deckMenu(data, deck),
       child: Padding(
         padding: EdgeInsets.all(grid ? 14 : 12),
         child: grid

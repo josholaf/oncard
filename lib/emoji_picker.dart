@@ -336,7 +336,7 @@ const List<String> iconSwatches = <String>[
 ];
 
 Color _hexColor(String hex) {
-  final value = int.tryParse('FF' + hex.substring(1), radix: 16);
+  final value = int.tryParse('FF${hex.substring(1)}', radix: 16);
   return Color(value ?? 0xFFFFFFFF);
 }
 
@@ -394,7 +394,7 @@ class _IconLibrarySheetState extends State<_IconLibrarySheet> {
 
   void _done() {
     if (_selected == null) return;
-    Navigator.pop(context, _selected! + (_color == null ? '' : '@' + _color!));
+    Navigator.pop(context, _selected! + (_color == null ? '' : '@$_color!'));
   }
 
   @override
@@ -450,7 +450,7 @@ class _IconLibrarySheetState extends State<_IconLibrarySheet> {
                       itemCount: matches.length,
                       itemBuilder: (context, i) {
                         final item = matches[i];
-                        final value = _icons ? 'lucide:' + item : item;
+                        final value = _icons ? 'lucide:$item' : item;
                         final selected = value == _selected;
                         return InkWell(
                           borderRadius: BorderRadius.circular(12),

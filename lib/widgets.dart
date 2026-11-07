@@ -164,7 +164,7 @@ Color? iconTint(String icon) {
   if (at == -1) return null;
   final hex = icon.substring(at + 1);
   if (hex.length != 7 || !hex.startsWith('#')) return null;
-  final value = int.tryParse('FF' + hex.substring(1), radix: 16);
+  final value = int.tryParse('FF${hex.substring(1)}', radix: 16);
   return value == null ? null : Color(value);
 }
 

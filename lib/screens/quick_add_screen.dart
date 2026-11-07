@@ -20,7 +20,7 @@ Future<void> maybeOpenQuickAdd(BuildContext context) async {
   if (!context.mounted) return;
   await Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
-        builder: (_) => QuickAddScreen(selectedText: text)),
+        builder: (_) => QuickAddScreen(selectedText: text!)),
   );
 }
 
@@ -110,7 +110,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                 onPressed: valid
                     ? () {
                         data.addCard(
-                          deckId!,
+                          deckId,
                           Flashcard(
                             id: uuid.v4(),
                             question: _front.text.trim(),
@@ -120,10 +120,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                'Saved to \"' +
-                                    (data.deckById(deckId!)?.name ??
-                                        'deck') +
-                                '\"'),
+                                'Saved to "${data.deckById(deckId)?.name ?? 'deck'}"'),
                           ),
                         );
                         Navigator.pop(context);

@@ -41,7 +41,7 @@ const deckPalette = <Color>[
 ];
 
 const deckIcons = <String>[
-  '📚', '🧠', '🪰', '🧬', '💻', '🎯',
+  '📚', '🧠', '🫀', '🧬', '💻', '🎯',
   '🇫🇷', '🇯🇵', '🌱', '⚗️', '🧪', '📝',
 ];
 
@@ -132,7 +132,7 @@ ThemeData _buildTheme(
       elevation: 0,
       color: surface,
       surfaceTintColor: surface,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(AppRadius.card)),
       ),
     ),
@@ -141,7 +141,7 @@ ThemeData _buildTheme(
       modalBackgroundColor: surface,
       surfaceTintColor: surface,
       showDragHandle: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
@@ -149,13 +149,13 @@ ThemeData _buildTheme(
     dialogTheme: DialogTheme(
       backgroundColor: surface,
       surfaceTintColor: surface,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(AppRadius.dialog)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.field)),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -191,13 +191,13 @@ ThemeData _buildTheme(
           const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
     ),
     listTileTheme: const ListTileThemeData(
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(AppRadius.tile)),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
       color: surface,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(AppRadius.field)),
       ),
     ),
