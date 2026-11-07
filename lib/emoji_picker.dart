@@ -14,7 +14,7 @@ Future<String?> showEmojiPickerSheet(BuildContext context,
     builder: (sheetContext) => Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
-      child: const _IconLibrarySheet(),
+      child: _IconLibrarySheet(current: current),
     ),
   );
 }
@@ -38,7 +38,8 @@ Color _hexColor(String hex) {
 }
 
 class _IconLibrarySheet extends StatefulWidget {
-  const _IconLibrarySheet();
+  final String current;
+  const _IconLibrarySheet({required this.current});
 
   @override
   State<_IconLibrarySheet> createState() => _IconLibrarySheetState();
@@ -46,15 +47,24 @@ class _IconLibrarySheet extends StatefulWidget {
 
 class _IconLibrarySheetState extends State<_IconLibrarySheet> {
   final _search = TextEditingController();
-  final String _selectedName;
+  String _selectedName = '';
   String? _color;
   List<String> _matches = const <String>[];
-
-  _IconLibrarySheetState() : _selectedName = '';
 
   @override
   void initState() {
     super.initState();
+    var base = widget.current;
+    final at = base.indexOf('@');
+    if (at != -1) {
+      final hex = base.substring(at + 1);
+      if (iconSwatches.contains(hex)) _color = hex;
+      base = base.substring(0, at);
+    }
+    if (base.startsWith('lucide:') &&
+        kLucideIcons.containsKey(base.substring(7))) {
+      _selectedName = base.substring(7);
+    }
     _filter();
     _search.addListener(_filter);
   }
@@ -78,6 +88,7 @@ class _IconLibrarySheetState extends State<_IconLibrarySheet> {
   }
 
   void _done() {
+    if (_selectedName.isEmpty) return;
     Navigator.pop(context,
         'lucide:' + _selectedName + (_color == null ? '' : '@' + _color!));
   }
@@ -186,7 +197,7 @@ class _IconLibrarySheetState extends State<_IconLibrarySheet> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _done,
+                  onPressed: _selectedName.isEmpty ? null : _done,
                   child: const Text('Done'),
                 ),
               ),
