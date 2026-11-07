@@ -33,7 +33,6 @@ Offline-first flashcards with spaced repetition. No account, no ads, no network 
 - **Create cards from anywhere** — select text in any Android app and send it to Oncard
 - **Import / export** — CSV and TSV import, CSV export, full JSON backup and restore
 - **Light and dark themes**
-- **Optional sign-in** — Google, GitHub, Apple and Microsoft via Firebase, guest-first, see [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md)
 
 Everything stays on your device. Oncard works fully offline.
 

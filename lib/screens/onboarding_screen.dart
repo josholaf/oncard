@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
-import '../auth.dart';
 
 /// First-launch introduction. Skippable, shown only while
 /// [AppData.onboarded] is false.
@@ -261,18 +260,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 prefixIcon: Icon(Icons.person_outline_rounded),
               ),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => showProviderSheet(context),
-                icon: const Icon(Icons.manage_accounts_outlined),
-                label: const Text('Create account'),
-              ),
-            ),
             const SizedBox(height: 8),
             Text(
-              'Accounts and cloud sync activate once Firebase is connected.',
+              'No account, ever. Everything lives on your device.',
               style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
             ),
           ],

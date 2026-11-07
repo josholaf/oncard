@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
-import '../auth.dart';
 
 /// Profile and account settings. Guests stay local-only.
 class ProfileScreen extends StatelessWidget {
@@ -143,34 +142,6 @@ class ProfileScreen extends StatelessWidget {
             margin: EdgeInsets.zero,
             child: Column(
               children: [
-                if (data.accountProvider == 'guest')
-                  ListTile(
-                    leading: const Icon(Icons.manage_accounts_outlined),
-                    title: const Text('Sign in'),
-                    subtitle: const Text(
-                        'Optional. Sync across devices when connected.'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => showProviderSheet(context),
-                  )
-                else
-                  ListTile(
-                    leading: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: cs.primary.withOpacity(0.12),
-                      child: Text(
-                        providerBadge(data.accountProvider),
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: cs.primary),
-                      ),
-                    ),
-                    title: Text(
-                        'Signed in with ${providerLabel(data.accountProvider)}'),
-                    subtitle: Text(data.accountEmail ?? ''),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => showProviderSheet(context),
-                  ),
                 ListTile(
                   leading: Icon(Icons.logout_rounded, color: cs.error),
                   title: const Text('Sign out'),
