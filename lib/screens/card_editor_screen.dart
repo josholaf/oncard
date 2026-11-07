@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../audio.dart';
 import '../cloze.dart';
 import '../models.dart';
 import '../rich_text.dart';
@@ -34,6 +36,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   late final TextEditingController _tags =
       TextEditingController(text: widget.card?.tags.join(', ') ?? '');
   String? _imagePath;
+  String? _audioPath;
 
   bool get _isEditing => widget.card != null;
 
@@ -41,6 +44,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   void initState() {
     super.initState();
     _imagePath = widget.card?.imagePath;
+    _audioPath = widget.card?.audioPath;
   }
 
   @override
@@ -76,6 +80,100 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     }
   }
 
+  Future<void> _attachMenu() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add_photo_alternate_rounded),
+              title: const Text('Image'),
+              subtitle: const Text('Pick a picture from the gallery'),
+              onTap: () => Navigator.pop(sheetContext, 'image'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.graphic_eq_rounded),
+              title: const Text('Audio'),
+              subtitle: const Text('Pick an audio file (mp3, m4a, wav)'),
+              onTap: () => Navigator.pop(sheetContext, 'audio'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == 'image') await _pickImage();
+    if (choice == 'audio') await _pickAudio();
+  }
+
+  Future<void> _pickAudio() async {
+    try {
+      final picked =
+          await FilePicker.platform.pickFiles(type: FileType.audio);
+      final path = picked?.files.single.path;
+      if (path == null) return;
+      final dir = await getApplicationDocumentsDirectory();
+      final audioDir = Directory(dir.path + '/card-audio')
+        ..createSync(recursive: true);
+      final name = 'aud_' +
+          DateTime.now().millisecondsSinceEpoch.toString() +
+          '_' +
+          path.split('/').last;
+      final saved = await File(path).copy(audioDir.path + '/' + name);
+      setState(() => _audioPath = saved.path);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Could not load that audio file.')));
+      }
+    }
+  }
+
+  /// Toggles a line prefix (bullet or numbered) on the answer's line.
+  void _toggleLinePrefix(String prefix) {
+    _lineEdit((line) {
+      if (line.startsWith(prefix)) {
+        return line.substring(prefix.length);
+      }
+      final stripped = line.replaceFirst(RegExp(r'^(- |\d+\. |>*)'), '');
+      return prefix + stripped;
+    });
+  }
+
+  /// Indents (delta 1) or outdents (delta -1) the answer's line.
+  void _indentLine(int delta) {
+    _lineEdit((line) {
+      if (delta > 0) return '>' + line;
+      if (line.startsWith('>')) return line.substring(1);
+      return line;
+    });
+  }
+
+  /// Applies [transform] to the line holding the caret in the answer.
+  void _lineEdit(String Function(String) transform) {
+    final controller = _answer;
+    final sel = controller.selection;
+    final text = controller.text;
+    final s = sel.start < 0 ? text.length : sel.start;
+    var lineStart = 0;
+    if (s > 0) {
+      lineStart = text.lastIndexOf('\n', s - 1) + 1;
+    }
+    var lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd == -1) lineEnd = text.length;
+    final line = text.substring(lineStart, lineEnd);
+    final next = transform(line);
+    final caret = s + (next.length - line.length);
+    controller.value = TextEditingValue(
+      text: text.replaceRange(lineStart, lineEnd, next),
+      selection: TextSelection.collapsed(offset: caret),
+    );
+    setState(() {});
+    FocusScope.of(context).requestFocus(_answerFocus);
+  }
+
   List<String> _parseTags(String raw) => raw
       .split(',')
       .map((t) => t.trim())
@@ -98,6 +196,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                 : answer,
             note: note,
             imagePath: _imagePath,
+                audioPath: _audioPath,
             tags: tags,
           );
     } else {
@@ -116,6 +215,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   note: note,
                   tags: tags,
                   imagePath: _imagePath,
+                audioPath: _audioPath,
                   clozeIndex: group,
                 ),
               );
@@ -132,6 +232,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                 note: note,
                 tags: tags,
                 imagePath: _imagePath,
+                audioPath: _audioPath,
               ),
             );
       }
@@ -201,14 +302,10 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                       errorBuilder: (_, __, ___) => const SizedBox.shrink()),
                 ),
               const Divider(height: 24),
-              Text.rich(
-                TextSpan(
-                  style: Theme.of(ctx).textTheme.bodyLarge,
-                  children: RichMarkup.parseSpans(_answer.text,
-                      Theme.of(ctx).textTheme.bodyLarge ??
-                          const TextStyle()),
-                ),
-                textAlign: TextAlign.center,
+              RichAnswer(
+                text: _answer.text,
+                style: Theme.of(ctx).textTheme.bodyLarge ??
+                    const TextStyle(),
               ),
               const SizedBox(height: 16),
               TextButton(
@@ -244,21 +341,31 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
             ),
             const SizedBox(height: 16),
             // Formatting toolbar: styles the answer's current selection.
-            Row(
-              children: [
-                IconButton(
-                  tooltip: 'Cloze: blank the selected text',
-                  icon: const Icon(Icons.visibility_off_rounded),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _wrapCloze,
-                ),
-                _formatButton(Icons.format_bold_rounded, 'Bold',
-                    () => RichMarkup.toggleWrap(_answer, '**', '**')),
-                _formatButton(Icons.format_italic_rounded, 'Italic',
-                    () => RichMarkup.toggleWrap(_answer, '*', '*')),
-                _formatButton(Icons.format_underline_rounded, 'Underline',
-                    () => RichMarkup.toggleWrap(_answer, '__', '__')),
-                PopupMenuButton<String>(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Cloze: blank the selected text',
+                    icon: const Icon(Icons.visibility_off_rounded),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _wrapCloze,
+                  ),
+                  _formatButton(Icons.format_bold_rounded, 'Bold',
+                      () => RichMarkup.toggleWrap(_answer, '**', '**')),
+                  _formatButton(Icons.format_italic_rounded, 'Italic',
+                      () => RichMarkup.toggleWrap(_answer, '*', '*')),
+                  _formatButton(Icons.format_underline_rounded, 'Underline',
+                      () => RichMarkup.toggleWrap(_answer, '__', '__')),
+                  _formatButton(Icons.format_list_bulleted_rounded, 'Bullet list',
+                      () => _toggleLinePrefix('- ')),
+                  _formatButton(Icons.format_list_numbered_rounded, 'Numbered list',
+                      () => _toggleLinePrefix('1. ')),
+                  _formatButton(Icons.format_indent_decrease_rounded,
+                      'Indent backward', () => _indentLine(-1)),
+                  _formatButton(Icons.format_indent_increase_rounded,
+                      'Indent forward', () => _indentLine(1)),
+                  PopupMenuButton<String>(
                   tooltip: 'Highlight color',
                   icon: const Icon(Icons.highlight_rounded),
                   onSelected: (name) {
@@ -285,9 +392,10 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                           ],
                         ),
                       ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
             TextFormField(
               controller: _answer,
@@ -362,11 +470,41 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.add_photo_alternate_rounded),
-                  label: const Text('Attach image'),
+                  onPressed: _attachMenu,
+                  icon: const Icon(Icons.attach_file_rounded),
+                  label: const Text('Add attachment'),
                 ),
               ),
+            if (_imagePath != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _attachMenu,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Add another attachment'),
+                ),
+              ),
+            if (_audioPath != null) ...[
+              Row(
+                children: [
+                  const Icon(Icons.graphic_eq_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Audio attached'),
+                  ),
+                  IconButton(
+                    tooltip: 'Play',
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    onPressed: () => CardAudio.play(_audioPath!),
+                  ),
+                  IconButton(
+                    tooltip: 'Remove audio',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => setState(() => _audioPath = null),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
 
             Row(

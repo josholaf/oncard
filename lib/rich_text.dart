@@ -70,7 +70,18 @@ class RichMarkup {
 
   /// Removes markup, leaving only the visible characters.
   static String stripMarkup(String text) => text
-      .replaceAllMapped(_pattern, (m) => m[1] ?? m[2] ?? m[3] ?? m[5] ?? m[7] ?? '');
+      .replaceAllMapped(_pattern, (m) => m[1] ?? m[2] ?? m[3] ?? m[5] ?? m[7] ?? '')
+      .split('\n')
+      .map((l) {
+        var t = l;
+        while (t.startsWith('>')) {
+          t = t.substring(1);
+        }
+        t = t.replaceFirst('- ', '');
+        t = t.replaceFirst(RegExp(r'^\d+\. '), '');
+        return t;
+      })
+      .join(' ');
 
   /// Wraps (or unwraps, if already wrapped) the controller's current
   /// selection with [before] and [after]. An empty selection inserts the
@@ -101,5 +112,68 @@ class RichMarkup {
       selection:
           TextSelection.collapsed(offset: s + before.length + selected.length),
     );
+  }
+}
+
+/// Renders a card answer that may contain inline markup plus block
+/// markers: '- ' bullets, '1. ' numbered lists and '>' indentation.
+class RichAnswer extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final TextAlign textAlign;
+  const RichAnswer(
+      {super.key, required this.text, required this.style, this.textAlign = TextAlign.center});
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = text.split('\n');
+    final first = lines.first;
+    final hasBlocks = lines.length > 1 ||
+        first.startsWith('- ') ||
+        first.startsWith('>') ||
+        RegExp(r'^\d+\. ').hasMatch(first);
+    if (!hasBlocks) {
+      return Text.rich(
+          TextSpan(style: style, children: RichMarkup.parseSpans(text, style)),
+          textAlign: textAlign);
+    }
+    var counter = 0;
+    var prevIndent = -1;
+    final children = <Widget>[];
+    for (final raw in lines) {
+      var indent = 0;
+      var line = raw;
+      while (line.startsWith('>')) {
+        indent += 1;
+        line = line.substring(1);
+      }
+      String? prefix;
+      if (line.startsWith('- ')) {
+        prefix = '• ';
+        line = line.substring(2);
+        prevIndent = -1;
+      } else {
+        final m = RegExp(r'^(\d+)\. ').firstMatch(line);
+        if (m != null) {
+          counter = indent != prevIndent ? 1 : counter + 1;
+          prevIndent = indent;
+          prefix = counter.toString() + '. ';
+          line = line.substring(m.end);
+        } else {
+          prevIndent = -1;
+        }
+      }
+      children.add(Padding(
+        padding: EdgeInsets.only(left: indent * 20.0),
+        child: Text.rich(
+          TextSpan(
+              style: style,
+              children: RichMarkup.parseSpans(
+                  prefix == null ? line : prefix + line, style)),
+          textAlign: textAlign,
+        ),
+      ));
+    }
+    return Column(children: children);
   }
 }

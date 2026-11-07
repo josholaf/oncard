@@ -1,6 +1,7 @@
 package com.example.oncard
 
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
@@ -11,13 +12,16 @@ import java.io.File
  * Receives text selected in other apps (Android PROCESS_TEXT intent),
  * keeps the latest selection in a static holder, and hands it to the
  * Flutter side over the 'oncard/share' method channel. Also shares
- * files (CSV exports) through the Android share sheet.
+ * files (CSV exports) through the Android share sheet and plays card
+ * audio attachments with a MediaPlayer.
  */
 class MainActivity : FlutterActivity() {
     companion object {
         @JvmStatic
         var pendingSelectedText: String? = null
     }
+
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +52,8 @@ class MainActivity : FlutterActivity() {
                         pendingSelectedText = null
                     }
                     "shareFile" -> shareFile(call, result)
+                    "playAudio" -> playAudio(call, result)
+                    "stopAudio" -> stopAudio(result)
                     else -> result.notImplemented()
                 }
             }
@@ -76,5 +82,40 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             result.error("share_failed", e.message, null)
         }
+    }
+
+    private fun playAudio(
+        call: io.flutter.plugin.common.MethodCall,
+        result: MethodChannel.Result
+    ) {
+        try {
+            val path = call.argument<String>("path")
+            if (path == null) {
+                result.error("no_path", null, null)
+                return
+            }
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(path)
+                setOnCompletionListener { it.release() }
+                prepare()
+                start()
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("play_failed", e.message, null)
+        }
+    }
+
+    private fun stopAudio(result: MethodChannel.Result) {
+        mediaPlayer?.release()
+        mediaPlayer = null
+        result.success(null)
+    }
+
+    override fun onDestroy() {
+        mediaPlayer?.release()
+        mediaPlayer = null
+        super.onDestroy()
     }
 }

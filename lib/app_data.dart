@@ -215,6 +215,7 @@ class AppData extends ChangeNotifier {
       required String answer,
       String note = '',
       String? imagePath,
+      String? audioPath,
       List<String>? tags}) {
     final deck = deckById(deckId);
     if (deck == null) return;
@@ -224,6 +225,7 @@ class AppData extends ChangeNotifier {
         card.answer = answer;
         card.note = note;
         card.imagePath = imagePath;
+        card.audioPath = audioPath;
         if (tags != null) card.tags = tags;
         break;
       }

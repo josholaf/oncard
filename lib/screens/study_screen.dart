@@ -6,6 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
+import '../audio.dart';
 import '../cloze.dart';
 import '../models.dart';
 import '../rich_text.dart';
@@ -177,15 +178,10 @@ class _StudyScreenState extends State<StudyScreen>
                       ),
                       textAlign: TextAlign.center,
                     )
-                  : Text.rich(
-                  TextSpan(
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    children: RichMarkup.parseSpans(card.answer,
-                        Theme.of(context).textTheme.headlineSmall ??
-                            const TextStyle()),
-                  ),
-                  textAlign: TextAlign.center,
-                ))
+                  : RichAnswer(
+                      text: card.answer,
+                      style: Theme.of(context).textTheme.headlineSmall ??
+                          const TextStyle()))
               : Text(
                   Cloze.blanked(card.question, card.clozeIndex),
                   textAlign: TextAlign.center,
@@ -196,6 +192,14 @@ class _StudyScreenState extends State<StudyScreen>
             Text(card.note,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium),
+          ],
+          if (back && card.audioPath != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => CardAudio.play(card.audioPath!),
+              icon: const Icon(Icons.volume_up_rounded),
+              label: const Text('Play audio'),
+            ),
           ],
           if (card.tags.isNotEmpty) ...[
             const SizedBox(height: 12),

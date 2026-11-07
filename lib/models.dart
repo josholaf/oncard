@@ -13,6 +13,9 @@ class Flashcard {
   List<String> tags;
   String? imagePath;
 
+  /// Optional audio attachment (pronunciation, lecture snippet).
+  String? audioPath;
+
   /// Cloze deletion group this card tests. 1 for non-cloze cards.
   int clozeIndex;
 
@@ -33,6 +36,7 @@ class Flashcard {
     this.note = '',
     List<String>? tags,
     this.imagePath,
+    this.audioPath,
     this.clozeIndex = 1,
     this.due = 0,
     this.stability = 0,
@@ -64,6 +68,7 @@ class Flashcard {
         'note': note,
         'tags': tags,
         if (imagePath != null) 'imagePath': imagePath,
+        if (audioPath != null) 'audioPath': audioPath,
         'due': due,
         'stability': stability,
         'ease': ease,
@@ -93,6 +98,7 @@ class Flashcard {
               .toList() ??
           const <String>[],
       imagePath: json['imagePath'] as String?,
+      audioPath: json['audioPath'] as String?,
       due: (json['due'] as int?) ?? 0,
       stability: migrated,
       ease: (json['ease'] as num?)?.toDouble() ?? 2.3,
