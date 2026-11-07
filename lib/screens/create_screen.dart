@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_data.dart';
-import '../emoji_picker.dart';
+import '../theme.dart';
 import '../widgets.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
@@ -167,7 +167,42 @@ class _NewDeckSheet extends StatefulWidget {
 
 class _NewDeckSheetState extends State<_NewDeckSheet> {
   final _name = TextEditingController();
-  String _icon = '👋';
+  int _colorIndex = 0;
+  int _shuffle = 0;
+
+  static const List<String> _fallbackIcons = <String>[
+    'layers', 'sparkles', 'rocket', 'brain', 'star', 'gem', 'zap', 'compass',
+    'flower', 'palette', 'trophy', 'wand-sparkles',
+  ];
+
+  static const List<String> _keywords = <String>[
+    'bio', 'dna', 'math', 'calculator', 'physic', 'atom', 'chem', 'flask-conical',
+    'med', 'stethoscope', 'pharma', 'pill', 'drug', 'pill', 'law', 'scale',
+    'music', 'music', 'code', 'code', 'art', 'palette', 'lang', 'languages',
+    'hist', 'landmark', 'geo', 'earth', 'space', 'rocket', 'astron', 'telescope',
+    'econom', 'banknote', 'money', 'wallet', 'business', 'briefcase',
+    'comput', 'cpu', 'phone', 'smartphone', 'robot', 'bot', 'ai', 'bot',
+    'psycho', 'brain', 'philoso', 'lightbulb', 'relig', 'church', 'theo', 'church',
+    'guitar', 'guitar', 'piano', 'piano', 'cook', 'chef-hat', 'food', 'utensils',
+    'sport', 'dumbbell', 'gym', 'dumbbell', 'run', 'footprints', 'foot', 'futbol',
+    'soccer', 'futbol', 'basket', 'volleyball', 'car', 'car', 'drive', 'car',
+    'engine', 'cog', 'anatom', 'heart-pulse', 'nurse', 'stethoscope',
+    'network', 'network', 'sql', 'database', 'data', 'database',
+    'stat', 'chart-line', 'graph', 'chart-pie', 'english', 'book-open',
+    'french', 'languages', 'german', 'languages', 'japan', 'languages',
+    'china', 'languages', 'arab', 'languages', 'swahili', 'languages',
+    'kinya', 'languages', 'travel', 'plane', 'plane', 'plane',
+  ];
+
+  /// Suggests an icon from the deck name, falling back to a rotating
+  /// list of pleasant defaults.
+  String _suggestIcon(String name) {
+    final n = name.trim().toLowerCase();
+    for (var i = 0; i + 1 < _keywords.length; i += 2) {
+      if (n.contains(_keywords[i])) return _keywords[i + 1];
+    }
+    return _fallbackIcons[_shuffle % _fallbackIcons.length];
+  }
 
   bool get _valid => _name.text.trim().isNotEmpty;
 
@@ -179,6 +214,9 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final icon = _suggestIcon(_name.text);
+    final tint = deckPalette[_colorIndex % deckPalette.length];
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -198,34 +236,64 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            Text('Icon', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
             Center(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () async {
-                  final picked =
-                      await showEmojiPickerSheet(context, current: _icon);
-                  if (picked != null) setState(() => _icon = picked);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color:
-                        Theme.of(context).colorScheme.primaryContainer,
+              child: Column(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: cs.surfaceContainerLow,
+                    ),
+                    child: Center(
+                      child: DeckIcon(icon: 'lucide:' + icon, size: 40, color: tint),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DeckIcon(icon: _icon, size: 28),
-                      const SizedBox(width: 10),
-                      Text('Tap to choose icon',
-                          style: Theme.of(context).textTheme.titleSmall),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Icon picked from the name. Change it later.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant),
                   ),
-                ),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _shuffle++),
+                    icon: const Icon(Icons.casino_rounded, size: 18),
+                    label: const Text('Shuffle icon'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text('Color', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (var i = 0; i < deckPalette.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => setState(() => _colorIndex = i),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: deckPalette[i],
+                            border: _colorIndex == i
+                                ? Border.all(color: cs.primary, width: 3)
+                                : Border.all(color: cs.outlineVariant),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -234,7 +302,8 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
               child: FilledButton(
                 onPressed: _valid
                     ? () {
-                        widget.onCreate(_name.text.trim(), _icon, 0);
+                        widget.onCreate(
+                            _name.text.trim(), 'lucide:' + icon, _colorIndex);
                         Navigator.pop(context);
                       }
                     : null,

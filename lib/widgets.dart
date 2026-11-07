@@ -187,7 +187,7 @@ class DeckIcon extends StatelessWidget {
   }
 }
 
-/// Deck avatar: colored circle with the deck emoji.
+/// Deck avatar: just the icon, tinted with the deck color. No circle.
 class DeckAvatar extends StatelessWidget {
   final String icon;
   final int colorIndex;
@@ -197,11 +197,17 @@ class DeckAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor:
-          iconTint(icon) ?? deckPalette[colorIndex % deckPalette.length],
-      child: DeckIcon(icon: icon, size: size * 0.55, color: Colors.white),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Center(
+        child: DeckIcon(
+          icon: icon,
+          size: size * 0.8,
+          color: iconTint(icon) ??
+              deckPalette[colorIndex % deckPalette.length],
+        ),
+      ),
     );
   }
 }
