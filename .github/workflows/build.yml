@@ -33,7 +33,8 @@ jobs:
       - run: flutter test
 
       - name: Generate Android platform folder
-        run: flutter create --platforms=android --project-name=oncard .
+        # Play Store rejects com.example.* ids, so publish under dev.josh.
+        run: flutter create --platforms=android --org dev.josh --project-name=oncard .
 
       - name: Set app display name to Oncard
         run: sed -i 's/android:label="oncard"/android:label="Oncard"/' android/app/src/main/AndroidManifest.xml
@@ -67,6 +68,29 @@ jobs:
           name: oncard-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Build signed app bundle for Play Store
+        if: github.ref_name != 'main'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No signing secrets configured, skipping AAB build."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          EOF
+          python3 scripts/setup_android_signing.py
+          flutter build appbundle --release
+          cp build/app/outputs/bundle/release/app-release.aab Oncard-Play.aab
+
       - name: Publish GitHub release with APK
         if: github.ref_name != 'main'
         env:
@@ -82,6 +106,9 @@ jobs:
               --title "Oncard $VERSION" \
               --generate-notes \
               Oncard.apk
+          fi
+          if [ -f Oncard-Play.aab ]; then
+            gh release upload "$VERSION" Oncard-Play.aab --clobber
           fi
 
   windows:
