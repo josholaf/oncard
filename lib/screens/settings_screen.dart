@@ -73,6 +73,29 @@ class SettingsScreen extends StatelessWidget {
                   data.setThemeStyle(selection.first),
             ),
           ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<AppFontStyle>(
+              segments: const [
+                ButtonSegment(
+                    value: AppFontStyle.systemDefault,
+                    label: Text('Default'),
+                    icon: Icon(Icons.text_fields_rounded)),
+                ButtonSegment(
+                    value: AppFontStyle.sanFrancisco,
+                    label: Text('SF'),
+                    icon: Icon(Icons.abc_rounded)),
+                ButtonSegment(
+                    value: AppFontStyle.nunito,
+                    label: Text('Nunito'),
+                    icon: Icon(Icons.font_download_rounded)),
+              ],
+              selected: {data.fontStyle},
+              onSelectionChanged: (selection) =>
+                  data.setFontStyle(selection.first),
+            ),
+          ),
 
           _header(context, 'Study'),
           Card(

@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // Today card: due summary + primary study action.
+        // Hero card: workload, goal ring and streak in one glance.
         Card(
           color: cs.primary,
           child: Padding(
@@ -72,15 +72,73 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Today',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: cs.onPrimary.withOpacity(0.8))),
-                const SizedBox(height: 8),
                 Row(
                   children: [
-                    _bigStat(context, data.totalDue, 'Due'),
-                    const SizedBox(width: 28),
-                    _bigStat(context, data.totalNew, 'New'),
+                    Expanded(
+                      child: Text('Today',
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: cs.onPrimary.withOpacity(0.8))),
+                    ),
+                    Icon(Icons.local_fire_department_rounded,
+                        size: 18, color: Color(0xFFE8B95D)),
+                    const SizedBox(width: 4),
+                    Text('${data.streak}',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onPrimary)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _bigStat(context, data.totalDue, 'Due'),
+                          const SizedBox(height: 12),
+                          _bigStat(context, data.totalNew, 'New'),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      width: 84,
+                      height: 84,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 84,
+                            height: 84,
+                            child: CircularProgressIndicator(
+                              value: goalProgress.clamp(0.0, 1.0).toDouble(),
+                              strokeWidth: 7,
+                              strokeCap: StrokeCap.round,
+                              color: cs.onPrimary,
+                              backgroundColor: cs.onPrimary.withOpacity(0.2),
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                  '${(goalProgress.clamp(0.0, 1.0) * 100).round()}%',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(color: cs.onPrimary)),
+                              Text('of goal',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                          color: cs.onPrimary
+                                              .withOpacity(0.7))),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -106,7 +164,7 @@ class HomeScreen extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // Streak + goal.
+        // Today at a glance: streak, mastered cards, deck count.
         Row(
           children: [
             Expanded(
@@ -120,30 +178,32 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: StatCard(
-                icon: Icons.flag_rounded,
-                value: '${data.reviewedToday}/${data.dailyGoal}',
-                label: 'daily goal',
+                icon: Icons.school_rounded,
+                value: '${data.learnedTotal}',
+                label: 'mastered',
                 color: const Color(0xFF39845B),
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: StatCard(
+                icon: Icons.style_rounded,
+                value: '${data.decks.length}',
+                label: 'decks',
+                color: const Color(0xFF6C5AA6),
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-              value: goalProgress.clamp(0.0, 1.0).toDouble(),
-              minHeight: 6),
         ),
 
         const SizedBox(height: 24),
 
         if (data.recentlyStudied.isNotEmpty) ...[
-          Text('Recently studied',
+          Text('Pick up where you left off',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           SizedBox(
-            height: 92,
+            height: 104,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.recentlyStudied.length,
@@ -163,11 +223,17 @@ class HomeScreen extends StatelessWidget {
                           DeckAvatar(
                               icon: deck.icon,
                               colorIndex: deck.colorIndex,
-                              size: 36),
+                              size: 34),
                           const SizedBox(height: 8),
                           Text(deck.name,
                               style:
                                   Theme.of(context).textTheme.labelLarge),
+                          if (deck.dueCount > 0)
+                            Text('${deck.dueCount} due',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(color: cs.error)),
                         ],
                       ),
                     ),

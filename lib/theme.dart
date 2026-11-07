@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 /// Theme accent presets selectable in Settings.
 enum AppThemeStyle { standard, green }
 
+/// Font presets selectable in Settings. Default keeps the platform
+/// font, San Francisco falls back to system-ui on Android.
+enum AppFontStyle { systemDefault, sanFrancisco, nunito }
+
 class _Accent {
   final Color primary;
   final Color secondary;

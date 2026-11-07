@@ -19,6 +19,7 @@ class AppData extends ChangeNotifier {
   List<Deck> decks = <Deck>[];
   ThemeMode themeMode = ThemeMode.system;
   AppThemeStyle themeStyle = AppThemeStyle.standard;
+  AppFontStyle fontStyle = AppFontStyle.systemDefault;
   int streak = 0;
   String lastStudyDay = '';
   int dailyGoal = 20;
@@ -58,6 +59,14 @@ class AppData extends ChangeNotifier {
     themeStyle = _prefs.getString('oncard.accent') == 'green'
         ? AppThemeStyle.green
         : AppThemeStyle.standard;
+    final savedFont = _prefs.getString('oncard.font');
+    if (savedFont == 'nunito') {
+      fontStyle = AppFontStyle.nunito;
+    } else if (savedFont == 'sf') {
+      fontStyle = AppFontStyle.sanFrancisco;
+    } else {
+      fontStyle = AppFontStyle.systemDefault;
+    }
     final rawHistory = _prefs.getString('oncard.history');
     if (rawHistory != null && rawHistory.isNotEmpty) {
       try {
@@ -94,6 +103,16 @@ class AppData extends ChangeNotifier {
     themeStyle = style;
     _prefs.setString('oncard.accent',
         style == AppThemeStyle.green ? 'green' : 'standard');
+    notifyListeners();
+  }
+
+  void setFontStyle(AppFontStyle style) {
+    fontStyle = style;
+    _prefs.setString(
+        'oncard.font',
+        style == AppFontStyle.nunito
+            ? 'nunito'
+            : (style == AppFontStyle.sanFrancisco ? 'sf' : 'default'));
     notifyListeners();
   }
 

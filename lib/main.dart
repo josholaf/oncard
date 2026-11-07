@@ -22,14 +22,23 @@ class OncardApp extends StatelessWidget {
   final SharedPreferences prefs;
   const OncardApp({super.key, required this.prefs});
 
-  /// Nunito when Google Fonts can load it; otherwise the platform
-  /// default, which is San Francisco on iOS and Roboto on Android.
-  TextTheme _nunito(TextTheme fallback) {
+  /// Text theme for the selected font preset. Default keeps the
+  /// platform font, SF falls back to system-ui on Android, Nunito
+  /// loads through Google Fonts when reachable.
+  TextTheme _fontTheme(AppFontStyle style, TextTheme fallback) {
     try {
-      return GoogleFonts.nunitoTextTheme(fallback);
+      if (style == AppFontStyle.nunito) {
+        return GoogleFonts.nunitoTextTheme(fallback);
+      }
+      if (style == AppFontStyle.sanFrancisco) {
+        return fallback.apply(
+            fontFamily: 'SF Pro Text',
+            fontFamilyFallback: <String>['SF Pro Text', 'system-ui']);
+      }
     } catch (_) {
-      return fallback;
+      // Font unavailable: keep the platform default.
     }
+    return fallback;
   }
 
   @override
@@ -39,10 +48,10 @@ class OncardApp extends StatelessWidget {
       child: Consumer<AppData>(
         builder: (context, data, _) {
           final light = buildLightTheme(
-              _nunito(ThemeData.light().textTheme),
+              _fontTheme(data.fontStyle, ThemeData.light().textTheme),
               style: data.themeStyle);
           final dark = buildDarkTheme(
-              _nunito(ThemeData.dark().textTheme),
+              _fontTheme(data.fontStyle, ThemeData.dark().textTheme),
               style: data.themeStyle);
           return MaterialApp(
             title: 'Oncard',
