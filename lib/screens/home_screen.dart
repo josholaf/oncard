@@ -112,7 +112,7 @@ class HomeScreen extends StatelessWidget {
                       child: Text('Today',
                           style:
                               Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: cs.onPrimary.withOpacity(0.8))),
+                                  color: cs.onPrimary.withOpacity(0.9))),
                     ),
                     Icon(Icons.local_fire_department_rounded,
                         size: 18, color: Color(0xFFE8B95D)),
@@ -167,7 +167,7 @@ class HomeScreen extends StatelessWidget {
                                       .labelSmall
                                       ?.copyWith(
                                           color: cs.onPrimary
-                                              .withOpacity(0.7))),
+                                              .withOpacity(0.85))),
                             ],
                           ),
                         ],
@@ -267,7 +267,9 @@ class HomeScreen extends StatelessWidget {
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall
-                                    ?.copyWith(color: cs.error)),
+                                    ?.copyWith(
+                                        color: cs.error,
+                                        fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -327,8 +329,9 @@ class HomeScreen extends StatelessWidget {
                 ?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
         Text(label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
                 color:
-                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.8))),
+                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.9))),
       ],
     );
   }

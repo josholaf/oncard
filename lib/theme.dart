@@ -30,7 +30,7 @@ class AppPalette {
   static const Color darkBackground = Color(0xFF000000);
   static const Color darkSurface = Color(0xFF141414);
   static const Color darkTextMain = Color(0xFFECEAF4);
-  static const Color darkTextMuted = Color(0xFFB6B4C2);
+  static const Color darkTextMuted = Color(0xFFC8C6D4);
 }
 
 const deckPalette = <Color>[
@@ -214,7 +214,9 @@ ThemeData _buildTheme(
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
     dividerTheme: DividerThemeData(
-      color: textMuted.withOpacity(0.2),
+      // Dark mode needs a firmer line to read as a border on black.
+      color: textMuted
+          .withOpacity(brightness == Brightness.dark ? 0.3 : 0.2),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
       linearTrackColor: containerHighest,
