@@ -23,6 +23,8 @@ class AppData extends ChangeNotifier {
   bool ttsEnabled = false;
   bool onboarded = false;
   String displayName = 'Guest';
+  String accountProvider = 'guest';
+  String? accountEmail;
   List<String> interests = <String>[];
   List<DayLog> history = <DayLog>[];
 
@@ -54,6 +56,9 @@ class AppData extends ChangeNotifier {
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
     onboarded = _prefs.getBool('onboarded') ?? false;
     displayName = _prefs.getString('oncard.name') ?? 'Guest';
+    accountProvider = _prefs.getString('oncard.account') ?? 'guest';
+    final savedEmail = _prefs.getString('oncard.email');
+    accountEmail = (savedEmail == null || savedEmail.isEmpty) ? null : savedEmail;
     final rawInterests = _prefs.getString('oncard.interests');
     if (rawInterests != null && rawInterests.isNotEmpty) {
       try {
@@ -129,12 +134,26 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Stores an authenticated account. Called by the auth seam once
+  /// Firebase sign-in is wired up, see docs/AUTH_SETUP.md.
+  void setAccount(String provider, String? email) {
+    accountProvider = provider;
+    accountEmail = (email == null || email.isEmpty) ? null : email;
+    _prefs.setString('oncard.account', provider);
+    _prefs.setString('oncard.email', email ?? '');
+    notifyListeners();
+  }
+
   /// Guest sign out: resets the profile and replays the onboarding.
   /// Study data is never touched.
   void signOutGuest() {
     displayName = 'Guest';
     interests = <String>[];
     onboarded = false;
+    accountProvider = 'guest';
+    accountEmail = null;
+    _prefs.setString('oncard.account', 'guest');
+    _prefs.setString('oncard.email', '');
     _prefs.setString('oncard.name', displayName);
     _prefs.setString('oncard.interests', jsonEncode(interests));
     _prefs.setBool('onboarded', false);
