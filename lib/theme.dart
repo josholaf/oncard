@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// Theme accent presets selectable in Settings.
-enum AppThemeStyle { standard, green }
+/// Single brand accent: deep editorial purple. One identity,
+/// no accent presets.
+const Color _primary = Color(0xFF6750A4);
+const Color _secondary = Color(0xFFA69BCB);
 
-/// Font presets selectable in Settings. Default keeps the platform
-/// font, San Francisco falls back to system-ui on Android.
-enum AppFontStyle { systemDefault, sanFrancisco, nunito }
-
-class _Accent {
-  final Color primary;
-  final Color secondary;
-  const _Accent(this.primary, this.secondary);
+/// Lightens a color so it stays readable as text or an icon on the
+/// dark surface palette.
+Color lightenForDark(Color c, [double amount = 0.18]) {
+  final hsl = HSLColor.fromColor(c);
+  return hsl
+      .withLightness((hsl.lightness + amount).clamp(0.0, 0.86))
+      .toColor();
 }
-
-const _standardAccent = _Accent(Color(0xFF6750A4), Color(0xFFA69BCB));
-const _greenAccent = _Accent(Color(0xFF2E7D32), Color(0xFF81C784));
 
 /// Oncard 2.0 palette: restrained, editorial, warm.
 class AppPalette {
@@ -32,7 +30,7 @@ class AppPalette {
   static const Color darkBackground = Color(0xFF000000);
   static const Color darkSurface = Color(0xFF141414);
   static const Color darkTextMain = Color(0xFFECEAF4);
-  static const Color darkTextMuted = Color(0xFFA9A7B4);
+  static const Color darkTextMuted = Color(0xFFB6B4C2);
 }
 
 const deckPalette = <Color>[
@@ -79,17 +77,18 @@ ThemeData _buildTheme(
   required Color textMain,
   required Color textMuted,
   required Color navBarColor,
-  required _Accent accent,
+  required Color primary,
+  required Color secondary,
   required Color focusColor,
   required bool boldTitles,
 }) {
   final scheme = ColorScheme.fromSeed(
-    seedColor: accent.primary,
+    seedColor: primary,
     brightness: brightness,
     surface: background,
   ).copyWith(
-    primary: accent.primary,
-    secondary: accent.secondary,
+    primary: primary,
+    secondary: secondary,
     onSurface: textMain,
     onSurfaceVariant: textMuted,
     surfaceContainerLowest: background,
@@ -223,11 +222,8 @@ ThemeData _buildTheme(
   );
 }
 
-/// Builds the light theme. Callers pass the Nunito text theme from main.dart.
-ThemeData buildLightTheme(TextTheme base,
-    {AppThemeStyle style = AppThemeStyle.standard}) {
-  final accent =
-      style == AppThemeStyle.green ? _greenAccent : _standardAccent;
+/// Builds the light theme on the shared palette.
+ThemeData buildLightTheme(TextTheme base) {
   return _buildTheme(
     base,
     brightness: Brightness.light,
@@ -237,18 +233,16 @@ ThemeData buildLightTheme(TextTheme base,
     textMain: AppPalette.textMain,
     textMuted: AppPalette.textMuted,
     navBarColor: AppPalette.surface,
-    accent: accent,
-    focusColor: accent.primary,
+    primary: _primary,
+    secondary: _secondary,
+    focusColor: _primary,
     boldTitles: true,
   );
 }
 
 /// Builds the dark theme. True black background matches the Android
 /// navigation area so buttons and gesture bar blend into the app.
-ThemeData buildDarkTheme(TextTheme base,
-    {AppThemeStyle style = AppThemeStyle.standard}) {
-  final accent =
-      style == AppThemeStyle.green ? _greenAccent : _standardAccent;
+ThemeData buildDarkTheme(TextTheme base) {
   return _buildTheme(
     base,
     brightness: Brightness.dark,
@@ -258,8 +252,9 @@ ThemeData buildDarkTheme(TextTheme base,
     textMain: AppPalette.darkTextMain,
     textMuted: AppPalette.darkTextMuted,
     navBarColor: AppPalette.darkBackground,
-    accent: accent,
-    focusColor: accent.secondary,
+    primary: _primary,
+    secondary: _secondary,
+    focusColor: _secondary,
     boldTitles: false,
   );
 }

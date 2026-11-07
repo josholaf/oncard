@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,37 +21,14 @@ class OncardApp extends StatelessWidget {
   final SharedPreferences prefs;
   const OncardApp({super.key, required this.prefs});
 
-  /// Text theme for the selected font preset. Default keeps the
-  /// platform font, SF falls back to system-ui on Android, Nunito
-  /// loads through Google Fonts when reachable.
-  TextTheme _fontTheme(AppFontStyle style, TextTheme fallback) {
-    try {
-      if (style == AppFontStyle.nunito) {
-        return GoogleFonts.nunitoTextTheme(fallback);
-      }
-      if (style == AppFontStyle.sanFrancisco) {
-        return fallback.apply(
-            fontFamily: 'SF Pro Text',
-            fontFamilyFallback: <String>['SF Pro Text', 'system-ui']);
-      }
-    } catch (_) {
-      // Font unavailable: keep the platform default.
-    }
-    return fallback;
-  }
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => AppData(prefs),
       child: Consumer<AppData>(
         builder: (context, data, _) {
-          final light = buildLightTheme(
-              _fontTheme(data.fontStyle, ThemeData.light().textTheme),
-              style: data.themeStyle);
-          final dark = buildDarkTheme(
-              _fontTheme(data.fontStyle, ThemeData.dark().textTheme),
-              style: data.themeStyle);
+          final light = buildLightTheme(ThemeData.light().textTheme);
+          final dark = buildDarkTheme(ThemeData.dark().textTheme);
           return MaterialApp(
             title: 'Oncard',
             debugShowCheckedModeBanner: false,

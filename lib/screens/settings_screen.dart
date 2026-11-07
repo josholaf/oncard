@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../import_export.dart';
-import '../theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -54,49 +53,6 @@ class SettingsScreen extends StatelessWidget {
                   data.setThemeMode(selection.first),
             ),
           ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SegmentedButton<AppThemeStyle>(
-              segments: const [
-                ButtonSegment(
-                    value: AppThemeStyle.standard,
-                    label: Text('Default'),
-                    icon: Icon(Icons.colorize_rounded)),
-                ButtonSegment(
-                    value: AppThemeStyle.green,
-                    label: Text('Green'),
-                    icon: Icon(Icons.eco_rounded)),
-              ],
-              selected: {data.themeStyle},
-              onSelectionChanged: (selection) =>
-                  data.setThemeStyle(selection.first),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SegmentedButton<AppFontStyle>(
-              segments: const [
-                ButtonSegment(
-                    value: AppFontStyle.systemDefault,
-                    label: Text('Default'),
-                    icon: Icon(Icons.text_fields_rounded)),
-                ButtonSegment(
-                    value: AppFontStyle.sanFrancisco,
-                    label: Text('SF'),
-                    icon: Icon(Icons.abc_rounded)),
-                ButtonSegment(
-                    value: AppFontStyle.nunito,
-                    label: Text('Nunito'),
-                    icon: Icon(Icons.font_download_rounded)),
-              ],
-              selected: {data.fontStyle},
-              onSelectionChanged: (selection) =>
-                  data.setFontStyle(selection.first),
-            ),
-          ),
-
           _header(context, 'Study'),
           Card(
             margin: EdgeInsets.zero,
@@ -192,7 +148,7 @@ class SettingsScreen extends StatelessWidget {
             child: const ListTile(
               title: Text('Oncard'),
               subtitle: Text(
-                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v1.0.05'),
+                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v1.0.06'),
             ),
           ),
         ],

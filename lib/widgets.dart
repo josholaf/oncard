@@ -39,6 +39,9 @@ class CountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fg = Theme.of(context).brightness == Brightness.dark
+        ? lightenForDark(color)
+        : color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -48,7 +51,7 @@ class CountBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: color,
+          color: fg,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -118,6 +121,11 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tint = color ?? cs.primary;
+    // Dark mode: lighten icon colors so they read on dark surfaces.
+    final shown = Theme.of(context).brightness == Brightness.dark
+        ? lightenForDark(tint)
+        : tint;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -127,10 +135,10 @@ class StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: (color ?? cs.primary).withOpacity(0.12),
+                color: shown.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: color ?? cs.primary),
+              child: Icon(icon, size: 18, color: shown),
             ),
             const SizedBox(height: 12),
             Text(value,
@@ -197,6 +205,12 @@ class DeckAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = iconTint(icon) ??
+        deckPalette[colorIndex % deckPalette.length];
+    // Dark mode: lighten deck colors so icons stay high contrast.
+    final tint = Theme.of(context).brightness == Brightness.dark
+        ? lightenForDark(base)
+        : base;
     return SizedBox(
       width: size,
       height: size,
@@ -204,8 +218,7 @@ class DeckAvatar extends StatelessWidget {
         child: DeckIcon(
           icon: icon,
           size: size * 0.8,
-          color: iconTint(icon) ??
-              deckPalette[colorIndex % deckPalette.length],
+          color: tint,
         ),
       ),
     );
