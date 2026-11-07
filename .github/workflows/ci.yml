@@ -1,0 +1,31 @@
+name: Test Oncard
+
+# Fast quality gate: static analysis and unit tests on every branch
+# and pull request, so problems surface before the heavy build runs.
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.24.5
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - run: flutter test
