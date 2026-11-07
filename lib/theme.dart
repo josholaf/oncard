@@ -156,7 +156,8 @@ ThemeData _buildTheme(
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.field)),
+          borderRadius:
+              BorderRadius.all(Radius.circular(AppRadius.field))),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -191,7 +192,7 @@ ThemeData _buildTheme(
           const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
     ),
     listTileTheme: const ListTileThemeData(
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(AppRadius.tile)),
       ),
     ),
