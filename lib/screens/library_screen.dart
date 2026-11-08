@@ -9,6 +9,7 @@ import '../models.dart';
 import '../widgets.dart';
 import 'create_screen.dart';
 import 'deck_screen.dart';
+import 'online_decks_screen.dart';
 
 enum _SortBy { name, recent, progress }
 
@@ -175,6 +176,49 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  /// Offers the two ways to bring in existing decks: importing an
+  /// .apkg file, or searching AnkiWeb shared decks online.
+  Future<void> _addDeckSheet(AppData data) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Import Anki file (.apkg)'),
+              subtitle: const Text('From your device'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.travel_explore_rounded),
+              title: const Text('Search shared decks online'),
+              subtitle: const Text('Thousands of free Anki decks'),
+              onTap: () => Navigator.pop(ctx, 'online'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted) return;
+    if (action == 'file') {
+      final count = await importAnkiPackage(context, data);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(count > 0
+              ? 'Imported ${count} cards from Anki'
+              : 'No importable cards found in that file.')));
+    } else {
+      Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+              builder: (_) => const OnlineDecksScreen()));
+    }
+  }
+
   void _openDeck(BuildContext context, String id) {
     Navigator.push(
         context,
@@ -199,16 +243,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
             onPressed: () => setState(() => _grid = !_grid),
           ),
           IconButton(
-            tooltip: 'Import Anki deck (.apkg)',
+            tooltip: 'Add decks',
             icon: const Icon(Icons.file_download_outlined),
-            onPressed: () async {
-              final count = await importAnkiPackage(context, data);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(count > 0
-                      ? 'Imported ${count} cards from Anki'
-                      : 'No importable cards found in that file.')));
-            },
+            onPressed: () => _addDeckSheet(data),
           ),
           IconButton(
             tooltip: 'New deck',

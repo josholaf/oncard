@@ -20,24 +20,24 @@ const List<String> _deckIconChoices = <String>[
   'lucide:graduation-cap',
 ];
 
-/// Picks an .apkg file and imports its notes as decks. Images and
-/// audio referenced by the notes are extracted into the app folders
-/// so they survive without Anki.
-Future<int> importAnkiPackage(BuildContext context, AppData data) async {
-  final picked = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: <String>['apkg'],
-    withData: true,
-  );
-  final bytes = picked?.files.single.bytes;
-  if (bytes == null) return 0;
+/// Result of importing an .apkg from raw bytes.
+class AnkiImportOutcome {
+  final int imported;
+  final String? error;
+  const AnkiImportOutcome(this.imported, this.error);
+}
 
+/// Imports an .apkg from raw bytes and adds its notes as decks.
+/// Images and audio referenced by the notes are extracted into the
+/// app folders so they survive without Anki.
+Future<AnkiImportOutcome> importAnkiPackageBytes(
+    List<int> bytes, AppData data) async {
   Archive archive;
   try {
     archive = ZipDecoder().decodeBytes(bytes);
   } catch (_) {
-    _snack(context, 'That file is not a valid Anki package.');
-    return 0;
+    return const AnkiImportOutcome(
+        0, 'That file is not a valid Anki package.');
   }
 
   // media json: zip entry name -> real file name.
@@ -68,9 +68,8 @@ Future<int> importAnkiPackage(BuildContext context, AppData data) async {
     if (dbFile != null) break;
   }
   if (dbFile == null) {
-    _snack(context,
-        'This .apkg uses a newer Anki format. Export it as a legacy deck.');
-    return 0;
+    return const AnkiImportOutcome(
+        0, 'This .apkg uses a newer Anki format. Export it as a legacy deck.');
   }
 
   final tmp = await getTemporaryDirectory();
@@ -82,8 +81,7 @@ Future<int> importAnkiPackage(BuildContext context, AppData data) async {
     db = sqlite3.open(dbPath);
   } catch (_) {
     dbFileOut.deleteSync();
-    _snack(context, 'Could not read the Anki collection.');
-    return 0;
+    return const AnkiImportOutcome(0, 'Could not read the Anki collection.');
   }
 
   var imported = 0;
@@ -196,7 +194,24 @@ Future<int> importAnkiPackage(BuildContext context, AppData data) async {
       dbFileOut.deleteSync();
     } catch (_) {}
   }
-  return imported;
+  return AnkiImportOutcome(imported, null);
+}
+
+/// Picks an .apkg file and imports its notes as decks.
+Future<int> importAnkiPackage(BuildContext context, AppData data) async {
+  final picked = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: <String>['apkg'],
+    withData: true,
+  );
+  final bytes = picked?.files.single.bytes;
+  if (bytes == null) return 0;
+  final outcome = await importAnkiPackageBytes(bytes, data);
+  if (outcome.error != null) {
+    _snack(context, outcome.error!);
+    return 0;
+  }
+  return outcome.imported;
 }
 
 /// Finds or creates a deck by name, ignoring case.
