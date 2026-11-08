@@ -1,4 +1,4 @@
-package com.example.oncard
+package dev.josh.oncard
 
 import android.content.Intent
 import android.media.MediaPlayer

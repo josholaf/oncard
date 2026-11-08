@@ -13,14 +13,23 @@ runs this script. It does three things:
 3. Installs the custom MainActivity that implements both features
    over the 'oncard/share' method channel.
 """
+import glob
 import io
 import os
 
 MANIFEST = 'android/app/src/main/AndroidManifest.xml'
-ACTIVITY = ('android/app/src/main/kotlin/com/example/oncard/'
-            'MainActivity.kt')
 OVERRIDE = 'android_override/MainActivity.kt'
 FILE_PATHS = 'android/app/src/main/res/xml/file_paths.xml'
+
+# CI regenerates android/ with `flutter create --org dev.josh`, so the
+# Kotlin package folder follows the org. Locate the generated activity
+# instead of hardcoding a path.
+KOTLIN_ROOT = 'android/app/src/main/kotlin'
+_candidates = glob.glob(KOTLIN_ROOT + '/**/MainActivity.kt', recursive=True)
+if not _candidates:
+    raise SystemExit('MainActivity.kt not found under ' + KOTLIN_ROOT)
+ACTIVITY = _candidates[0]
+PACKAGE = os.path.dirname(ACTIVITY)[len(KOTLIN_ROOT) + 1:].replace('/', '.')
 
 manifest = io.open(MANIFEST, encoding='utf-8').read()
 if 'PROCESS_TEXT' not in manifest:
@@ -59,8 +68,11 @@ else:
 
 with io.open(OVERRIDE, encoding='utf-8') as f:
     source = f.read()
+if 'package com.example.oncard' in source:
+    source = source.replace('package com.example.oncard',
+                            'package ' + PACKAGE)
 io.open(ACTIVITY, 'w', encoding='utf-8').write(source)
-print('MainActivity.kt: installed')
+print('MainActivity.kt: installed (' + PACKAGE + ')')
 
 os.makedirs(os.path.dirname(FILE_PATHS), exist_ok=True)
 with io.open(FILE_PATHS, 'w', encoding='utf-8') as f:
