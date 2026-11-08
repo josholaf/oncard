@@ -9,6 +9,7 @@ import '../app_data.dart';
 import '../audio.dart';
 import '../cloze.dart';
 import '../models.dart';
+import '../occlusion.dart';
 import '../rich_text.dart';
 import '../scheduler.dart';
 
@@ -151,9 +152,11 @@ class _StudyScreenState extends State<StudyScreen>
     final card = _queue[_index];
     final cs = Theme.of(context).colorScheme;
     final questionSide = !back;
-    if (questionSide && card.imagePath != null) {
-      // Image cards show the picture on the front.
-      return _imageFace(context, card);
+    if (card.imagePath != null &&
+        (questionSide || card.occlusions.isNotEmpty)) {
+      // Image cards show the picture on the front. Occlusion cards
+      // keep the image on the back with the hidden regions revealed.
+      return _imageFace(context, card, back);
     }
     return Container(
       width: double.infinity,
@@ -216,7 +219,7 @@ class _StudyScreenState extends State<StudyScreen>
     );
   }
 
-  Widget _imageFace(BuildContext context, Flashcard card) {
+  Widget _imageFace(BuildContext context, Flashcard card, bool back) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
@@ -230,13 +233,27 @@ class _StudyScreenState extends State<StudyScreen>
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.file(
-              cardFile(card.imagePath!),
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox(
-                height: 120,
-                child: Center(child: Text('Image not available')),
-              ),
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                Image.file(
+                  cardFile(card.imagePath!),
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    height: 120,
+                    child: Center(child: Text('Image not available')),
+                  ),
+                ),
+                if (card.occlusions.isNotEmpty)
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: OcclusionPainter(
+                        rects: card.occlusions,
+                        revealed: back,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
