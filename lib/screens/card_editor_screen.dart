@@ -37,7 +37,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   late final TextEditingController _tags =
       TextEditingController(text: widget.card?.tags.join(', ') ?? '');
   String? _imagePath;
-  late final List<double> _occlusions =
+  List<double> _occlusions =
       List<double>.from(widget.card?.occlusions ?? const <double>[]);
   String? _audioPath;
 
