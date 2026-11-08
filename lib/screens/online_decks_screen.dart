@@ -70,7 +70,6 @@ class _OnlineDecksScreenState extends State<OnlineDecksScreen> {
     }
     if (!mounted) return;
     setState(() => _searching = false);
-    final cs = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
