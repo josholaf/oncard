@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_data.dart';
 import '../emoji_picker.dart';
+import '../anki_import.dart';
 import '../import_export.dart';
 import '../models.dart';
 import '../widgets.dart';
@@ -196,6 +197,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
             icon: Icon(
                 _grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
             onPressed: () => setState(() => _grid = !_grid),
+          ),
+          IconButton(
+            tooltip: 'Import Anki deck (.apkg)',
+            icon: const Icon(Icons.file_download_outlined),
+            onPressed: () async {
+              final count = await importAnkiPackage(context, data);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(count > 0
+                      ? 'Imported ${count} cards from Anki'
+                      : 'No importable cards found in that file.')));
+            },
           ),
           IconButton(
             tooltip: 'New deck',

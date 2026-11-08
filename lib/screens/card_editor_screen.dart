@@ -10,6 +10,7 @@ import '../app_data.dart';
 import '../audio.dart';
 import '../cloze.dart';
 import '../models.dart';
+import '../occlusion.dart';
 import '../rich_text.dart';
 import 'study_screen.dart' show Tts;
 
@@ -36,6 +37,8 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   late final TextEditingController _tags =
       TextEditingController(text: widget.card?.tags.join(', ') ?? '');
   String? _imagePath;
+  late final List<double> _occlusions =
+      List<double>.from(widget.card?.occlusions ?? const <double>[]);
   String? _audioPath;
 
   bool get _isEditing => widget.card != null;
@@ -131,6 +134,19 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     }
   }
 
+  Future<void> _editOcclusions() async {
+    final result = await Navigator.push<List<double>>(
+      context,
+      MaterialPageRoute<List<double>>(
+        builder: (_) => OcclusionEditor(
+          imagePath: _imagePath!,
+          initial: _occlusions,
+        ),
+      ),
+    );
+    if (result != null) setState(() => _occlusions = result);
+  }
+
   /// Toggles a line prefix (bullet or numbered) on the answer's line.
   void _toggleLinePrefix(String prefix) {
     _lineEdit((line) {
@@ -197,6 +213,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
             note: note,
             imagePath: _imagePath,
                 audioPath: _audioPath,
+                occlusions: _occlusions,
             tags: tags,
           );
     } else {
@@ -216,6 +233,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   tags: tags,
                   imagePath: _imagePath,
                 audioPath: _audioPath,
+                  occlusions: _occlusions,
                   clozeIndex: group,
                 ),
               );
@@ -233,6 +251,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                 tags: tags,
                 imagePath: _imagePath,
                 audioPath: _audioPath,
+                occlusions: _occlusions,
               ),
             );
       }
@@ -473,6 +492,17 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
                   onPressed: _attachMenu,
                   icon: const Icon(Icons.attach_file_rounded),
                   label: const Text('Add attachment'),
+                ),
+              ),
+            if (_imagePath != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _editOcclusions,
+                  icon: const Icon(Icons.crop_free_rounded, size: 18),
+                  label: Text(_occlusions.isEmpty
+                      ? 'Hide parts of image'
+                      : '${_occlusions.length ~/ 4} region(s) hidden'),
                 ),
               ),
             if (_imagePath != null)

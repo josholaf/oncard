@@ -16,6 +16,9 @@ class Flashcard {
   /// Optional audio attachment (pronunciation, lecture snippet).
   String? audioPath;
 
+  /// Image occlusion regions: normalized x, y, w, h quadruples.
+  List<double> occlusions;
+
   /// Cloze deletion group this card tests. 1 for non-cloze cards.
   int clozeIndex;
 
@@ -37,13 +40,15 @@ class Flashcard {
     List<String>? tags,
     this.imagePath,
     this.audioPath,
+    List<double>? occlusions,
     this.clozeIndex = 1,
     this.due = 0,
     this.stability = 0,
     this.ease = 2.3,
     this.reps = 0,
     this.lapses = 0,
-  }) : tags = tags ?? const <String>[];
+  })  : tags = tags ?? const <String>[],
+        occlusions = occlusions ?? const <double>[];
 
   bool get isNew => reps == 0;
 
@@ -69,6 +74,7 @@ class Flashcard {
         'tags': tags,
         if (imagePath != null) 'imagePath': imagePath,
         if (audioPath != null) 'audioPath': audioPath,
+        if (occlusions.isNotEmpty) 'occlusions': occlusions,
         'due': due,
         'stability': stability,
         'ease': ease,
@@ -99,6 +105,10 @@ class Flashcard {
           const <String>[],
       imagePath: json['imagePath'] as String?,
       audioPath: json['audioPath'] as String?,
+      occlusions: (json['occlusions'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          const <double>[],
       due: (json['due'] as int?) ?? 0,
       stability: migrated,
       ease: (json['ease'] as num?)?.toDouble() ?? 2.3,
