@@ -304,6 +304,11 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   /// question with any cloze blanked, the image, playable audio and
   /// the formatted answer.
   void _preview() {
+    if (_question.text.trim().isEmpty && _answer.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Type a question or answer to preview.')));
+      return;
+    }
     final group = widget.card?.clozeIndex ?? 1;
     final hasCloze = Cloze.hasCloze(_question.text);
     final answer = _answer.text.isEmpty && hasCloze
@@ -560,7 +565,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _question.text.isEmpty ? null : _preview,
+                    onPressed: _preview,
                     icon: const Icon(Icons.visibility_rounded),
                     label: const Text('Preview'),
                   ),

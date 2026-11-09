@@ -125,7 +125,7 @@ class SettingsScreen extends StatelessWidget {
             child: const ListTile(
               title: Text('Oncard'),
               subtitle: Text(
-                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v1.0.09'),
+                  'Study smarter, remember longer. Offline-first flashcards with spaced repetition. v1.0.10'),
             ),
           ),
         ],

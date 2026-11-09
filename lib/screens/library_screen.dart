@@ -290,7 +290,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       onTap: () => _openDeck(context, deck.id),
       onLongPress: () => _deckMenu(data, deck),
       child: Padding(
-        padding: EdgeInsets.all(grid ? 14 : 12),
+        padding: grid
+            ? const EdgeInsets.all(14)
+            : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: grid
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,

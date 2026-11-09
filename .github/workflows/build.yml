@@ -42,6 +42,9 @@ jobs:
       - name: Wire text-selection quick add
         run: python3 scripts/setup_process_text.py
 
+      - name: Wire home-screen widget
+        run: python3 scripts/setup_widgets.py
+
       - name: Render app icon from logo.svg
         run: |
           sudo apt-get update -qq

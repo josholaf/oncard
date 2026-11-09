@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_data.dart';
+import 'home_widget_sync.dart';
 import 'screens/create_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/library_screen.dart';
@@ -18,14 +21,39 @@ Future<void> main() async {
   runApp(OncardApp(prefs: prefs));
 }
 
-class OncardApp extends StatelessWidget {
+class OncardApp extends StatefulWidget {
   final SharedPreferences prefs;
   const OncardApp({super.key, required this.prefs});
 
   @override
+  State<OncardApp> createState() => _OncardAppState();
+}
+
+class _OncardAppState extends State<OncardApp> {
+  late final AppData _data = AppData(widget.prefs);
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep the Android home-screen widget in sync with study data.
+    _data.addListener(_syncHomeWidget);
+    unawaited(updateHomeWidget(_data));
+  }
+
+  @override
+  void dispose() {
+    _data.removeListener(_syncHomeWidget);
+    super.dispose();
+  }
+
+  void _syncHomeWidget() {
+    unawaited(updateHomeWidget(_data));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppData(prefs),
+    return ChangeNotifierProvider<AppData>.value(
+      value: _data,
       child: Consumer<AppData>(
         builder: (context, data, _) {
           final light = buildLightTheme(ThemeData.light().textTheme);
