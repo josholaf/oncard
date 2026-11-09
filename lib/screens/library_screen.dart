@@ -303,16 +303,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 6),
                   Text(
-                      '${(deck.progress * 100).round()}% mastered',
+                      '${deck.cards.length} cards',
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
                           ?.copyWith(color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(value: deck.progress),
-                  ),
                   const SizedBox(height: 8),
                   _badges(deck),
                 ],
@@ -328,20 +323,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         Text(deck.name,
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child:
-                                    LinearProgressIndicator(value: deck.progress),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text('${(deck.progress * 100).round()}%',
-                                style: Theme.of(context).textTheme.bodySmall),
-                          ],
-                        ),
+                        Text('${deck.cards.length} cards',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant)),
                         const SizedBox(height: 8),
                         _badges(deck),
                       ],
@@ -366,8 +352,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
     return Card(
-      margin: grid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
-      color: cs.surfaceContainerLow,
+      margin: grid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 10),
       child: inner,
     );
   }
@@ -380,11 +365,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         if (deck.dueCount > 0)
           CountBadge(
               label: '${deck.dueCount} due',
-              color: const Color(0xFF9C4146)),
+              color: const Color(0xFF6750A4)),
         if (deck.newCount > 0)
           CountBadge(
               label: '${deck.newCount} new',
-              color: const Color(0xFF1565C0)),
+              color: const Color(0xFF39845B)),
       ],
     );
   }
