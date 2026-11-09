@@ -281,7 +281,7 @@ class HomeScreen extends StatelessWidget {
                                     .textTheme
                                     .labelSmall
                                     ?.copyWith(
-                                        color: cs.error,
+                                        color: const Color(0xFF6750A4),
                                         fontWeight: FontWeight.w600)),
                         ],
                       ),
@@ -395,7 +395,7 @@ class _DeckRow extends StatelessWidget {
               if (deck.dueCount > 0)
                 CountBadge(
                     label: '${deck.dueCount} due',
-                    color: const Color(0xFF9C4146)),
+                    color: const Color(0xFF6750A4)),
             ],
           ),
         ),

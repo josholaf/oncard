@@ -300,39 +300,58 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     );
   }
 
+  /// Full preview of the card as it will look when studied: the
+  /// question with any cloze blanked, the image, playable audio and
+  /// the formatted answer.
   void _preview() {
+    final group = widget.card?.clozeIndex ?? 1;
+    final hasCloze = Cloze.hasCloze(_question.text);
+    final answer = _answer.text.isEmpty && hasCloze
+        ? Cloze.answerFor(_question.text, group)
+        : _answer.text;
     showDialog<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(Cloze.blanked(_question.text, 1),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              if (_imagePath != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(File(_imagePath!),
-                      height: 140, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-                ),
-              const Divider(height: 24),
-              RichAnswer(
-                text: _answer.text,
-                style: Theme.of(ctx).textTheme.bodyLarge ??
-                    const TextStyle(),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Preview'),
+        scrollable: true,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(hasCloze ? Cloze.blanked(_question.text, group) : _question.text,
+                style: Theme.of(ctx).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            if (_imagePath != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(File(_imagePath!),
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink()),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Close')),
-            ],
-          ),
+            if (_audioPath != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: OutlinedButton.icon(
+                  onPressed: () => CardAudio.play(_audioPath!),
+                  icon: const Icon(Icons.volume_up_rounded),
+                  label: const Text('Play audio'),
+                ),
+              ),
+            const Divider(height: 24),
+            RichAnswer(
+              text: answer,
+              style:
+                  Theme.of(ctx).textTheme.bodyLarge ?? const TextStyle(),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close')),
+        ],
       ),
     );
   }
