@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../anki_import.dart';
 import '../app_data.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
+import 'online_decks_screen.dart';
 
 /// The Create tab: quick actions for decks, cards and imports.
 class CreateScreen extends StatelessWidget {
@@ -46,6 +48,26 @@ class CreateScreen extends StatelessWidget {
     }
   }
 
+  /// Imports an .apkg file from the device into local decks.
+  Future<void> _importAnkiFile(BuildContext context) async {
+    final data = context.read<AppData>();
+    final count = await importAnkiPackage(context, data);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(count > 0
+            ? 'Imported ${count} cards from Anki'
+            : 'No importable cards found in that file.')));
+  }
+
+  /// Opens the AnkiWeb shared deck search; downloaded decks are
+  /// saved locally like any other deck.
+  Future<void> _searchOnline(BuildContext context) {
+    return Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+            builder: (_) => const OnlineDecksScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,6 +94,20 @@ class CreateScreen extends StatelessWidget {
             title: 'Import CSV',
             subtitle: 'Choose a deck, then pick a CSV or TSV file',
             onTap: () => pickDeckAndImportCsv(context),
+          ),
+          const SizedBox(height: 12),
+          _ActionCard(
+            icon: Icons.file_download_outlined,
+            title: 'Import Anki deck',
+            subtitle: 'An .apkg file with images and audio',
+            onTap: () => _importAnkiFile(context),
+          ),
+          const SizedBox(height: 12),
+          _ActionCard(
+            icon: Icons.travel_explore_rounded,
+            title: 'Search decks online',
+            subtitle: 'Download shared Anki decks, saved on your device',
+            onTap: () => _searchOnline(context),
           ),
           const SizedBox(height: 24),
           Text(

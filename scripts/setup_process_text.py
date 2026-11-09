@@ -32,6 +32,16 @@ ACTIVITY = _candidates[0]
 PACKAGE = os.path.dirname(ACTIVITY)[len(KOTLIN_ROOT) + 1:].replace('/', '.')
 
 manifest = io.open(MANIFEST, encoding='utf-8').read()
+if 'android.permission.INTERNET' not in manifest:
+    permission = ('<uses-permission '
+                  'android:name="android.permission.INTERNET" />\n    ')
+    patched = manifest.replace('<application', permission + '<application', 1)
+    io.open(MANIFEST, 'w', encoding='utf-8').write(patched)
+    print('manifest: INTERNET permission added')
+else:
+    print('manifest: INTERNET permission already present')
+
+manifest = io.open(MANIFEST, encoding='utf-8').read()
 if 'PROCESS_TEXT' not in manifest:
     intent_filter = (
         '<intent-filter>\n'
