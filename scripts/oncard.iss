@@ -10,7 +10,7 @@ AppVersion={#MyAppVersion}
 AppPublisher=josholaf
 DefaultDirName={autopf}\Oncard
 DefaultGroupName=Oncard
-Output=Oncard-Setup.exe
+OutputBaseFilename=Oncard-Setup
 ; OutputDir is resolved relative to the script file, so anchor it
 ; at the repository root: <root>/installer.
 OutputDir={#SourcePath}\..\installer
