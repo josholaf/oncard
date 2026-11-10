@@ -4,7 +4,7 @@
     android:minHeight="180dp"
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/oncard_widget"
-    android:description="Oncard — Study smarter, remember longer"
+    android:description="@string/app_name"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:label="Oncard" />
