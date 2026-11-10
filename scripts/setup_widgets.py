@@ -44,6 +44,24 @@ with io.open(WIDGET_RES + '/oncard_widget_info.xml', encoding='utf-8') as f:
 io.open(RES + '/xml/oncard_widget_info.xml', 'w', encoding='utf-8').write(info)
 print('res/xml/oncard_widget_info.xml written')
 
+# Ensure @string/app_name exists (widget description references it)
+strings_path = RES + '/values/strings.xml'
+os.makedirs(os.path.dirname(strings_path), exist_ok=True)
+if os.path.exists(strings_path):
+    with io.open(strings_path, encoding='utf-8') as f:
+        strings = f.read()
+    if 'name="app_name"' not in strings:
+        strings = strings.replace('</resources>', '    <string name="app_name">Oncard</string>\n</resources>')
+        with io.open(strings_path, 'w', encoding='utf-8') as f:
+            f.write(strings)
+        print('added app_name to existing strings.xml')
+    else:
+        print('app_name already present in strings.xml')
+else:
+    with io.open(strings_path, 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">Oncard</string>\n</resources>\n')
+    print('created strings.xml with app_name')
+
 manifest = io.open(MANIFEST, encoding='utf-8').read()
 if 'OncardWidgetProvider' not in manifest:
     receiver = (
