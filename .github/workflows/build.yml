@@ -39,9 +39,9 @@ jobs:
       - name: Set app display name to Oncard
         run: sed -i 's/android:label="oncard"/android:label="Oncard"/' android/app/src/main/AndroidManifest.xml
 
-      - name: Raise Kotlin, AGP and compileSdk for widget plugin
-        # home_widget pulls androidx.work:2.11.2 which requires AGP >= 8.6.0.
-        # Flutter 3.24.5 template pins AGP 8.1.0 / Gradle ~8.3 and older Kotlin.
+      - name: Raise Kotlin, AGP, minSdk, NDK and compileSdk for widget plugin
+        # home_widget pulls androidx.work:2.11.2 (needs AGP >= 8.6.0, minSdk >= 23).
+        # Flutter 3.24.5 template pins older AGP/Gradle/Kotlin/minSdk/NDK.
         run: |
           # Kotlin
           sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "2.1.20"/' android/settings.gradle
@@ -49,10 +49,15 @@ jobs:
           sed -i 's/com.android.application" version "[^"]*"/com.android.application" version "8.6.1"/' android/settings.gradle
           # compileSdk
           sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle
+          # minSdk (work-runtime-ktx 2.11 requires 23)
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle
+          # NDK (plugins require 26.1)
+          sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "26.1.10909125"/' android/app/build.gradle
           # Gradle wrapper (AGP 8.6 needs Gradle >= 8.7)
           sed -i 's|distributionUrl=.*|distributionUrl=https\://services.gradle.org/distributions/gradle-8.9-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
           grep -q '2.1.20' android/settings.gradle || (echo 'kotlin patch failed' && exit 1)
           grep -q '8.6.1' android/settings.gradle || (echo 'agp patch failed' && exit 1)
+          grep -q 'minSdk = 23' android/app/build.gradle || (echo 'minSdk patch failed' && exit 1)
           grep -q 'gradle-8.9' android/gradle/wrapper/gradle-wrapper.properties || (echo 'gradle patch failed' && exit 1)
 
       - name: Wire text-selection quick add
