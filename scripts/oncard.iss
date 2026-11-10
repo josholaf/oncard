@@ -19,7 +19,8 @@ SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
 
 [Files]
-Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+; Source is also relative to the .iss file (scripts/), so climb to repo root.
+Source: "..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 Name: "{group}\Oncard"; Filename: "{app}\oncard.exe"; WorkingDir: "{app}"
