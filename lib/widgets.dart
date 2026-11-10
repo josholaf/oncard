@@ -228,22 +228,17 @@ class DeckAvatar extends StatelessWidget {
 /// GitHub-style contribution heatmap of study activity.
 ///
 /// Columns are weeks (most recent on the right), rows are weekdays, cells
-/// are colored in five steps from none to full intensity. Month labels sit
-/// above the grid and a Less/More legend below it.
+/// are colored in five steps from none to full intensity. Defaults to a
+/// full year, scaled to fit the card width. A Less/More legend sits below.
 class StudyHeatmap extends StatelessWidget {
   final Map<String, DayLog> byDate;
 
   /// How many week columns to show, counting back from the current week.
   final int weeks;
 
-  const StudyHeatmap({super.key, required this.byDate, this.weeks = 26});
+  const StudyHeatmap({super.key, required this.byDate, this.weeks = 52});
 
   static const List<double> _levelOpacity = <double>[0, 0.25, 0.45, 0.7, 1.0];
-
-  static const List<String> _monthShort = <String>[
-    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -261,9 +256,9 @@ class StudyHeatmap extends StatelessWidget {
       if (c > maxCount) maxCount = c;
     }
 
+    // Full year at a glance: small cells scaled down to the card
+    // width, so older months never leave the card.
     final columns = <Widget>[];
-    final monthLabels = <Widget>[];
-    var prevMonth = -1;
     for (var w = 0; w < weeks; w++) {
       final cells = <Widget>[];
       for (var d = 0; d < 7; d++) {
@@ -274,11 +269,11 @@ class StudyHeatmap extends StatelessWidget {
             ? 0
             : (((count - 1) / maxCount * 3).round() + 1).clamp(1, 4).toInt();
         cells.add(Container(
-          width: 12,
-          height: 12,
-          margin: const EdgeInsets.all(1.5),
+          width: 5,
+          height: 5,
+          margin: const EdgeInsets.all(0.75),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(1.5),
             color: level == 0
                 ? cs.surfaceContainerHighest.withOpacity(0.6)
                 : cs.primary.withOpacity(_levelOpacity[level]),
@@ -286,60 +281,14 @@ class StudyHeatmap extends StatelessWidget {
         ));
       }
       columns.add(Column(children: cells));
-
-      final weekStart = firstDay.add(Duration(days: w * 7));
-      final label = weekStart.month != prevMonth
-          ? _monthShort[weekStart.month]
-          : '';
-      monthLabels.add(SizedBox(
-        width: 15,
-        child: Text(label,
-            maxLines: 1,
-            overflow: TextOverflow.clip,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant)),
-      ));
-      prevMonth = weekStart.month;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: monthLabels),
-        const SizedBox(height: 4),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                for (var d = 0; d < 7; d++)
-                  SizedBox(
-                    height: 15,
-                    width: 22,
-                    child: d == 1 || d == 3 || d == 5
-                        ? Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              d == 1 ? 'M' : (d == 3 ? 'W' : 'F'),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant),
-                            ),
-                          )
-                        : null,
-                  ),
-              ],
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: columns),
-              ),
-            ),
-          ],
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(children: columns),
         ),
         const SizedBox(height: 8),
         Row(
