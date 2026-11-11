@@ -82,6 +82,12 @@ class _StudyScreenState extends State<StudyScreen>
 
   int get _total => _grades.length;
 
+  int get _againCount =>
+      _grades.where((g) => g == Grade.again).length;
+
+  int get _remaining =>
+      (_queue.length - _index).clamp(0, _queue.length);
+
   void _advance(Grade grade) {
     final card = _queue[_index];
     context.read<AppData>().recordReview(widget.deck.id, card, grade);
@@ -118,16 +124,12 @@ class _StudyScreenState extends State<StudyScreen>
     setState(() => _showBack = !_showBack);
   }
 
-  // ---- Flip mode face ----
-
   Widget _face(BuildContext context, bool back) {
     final card = _queue[_index];
     final cs = Theme.of(context).colorScheme;
     final questionSide = !back;
     if (card.imagePath != null &&
         (questionSide || card.occlusions.isNotEmpty)) {
-      // Image cards show the picture on the front. Occlusion cards
-      // keep the image on the back with the hidden regions revealed.
       return _imageFace(context, card, back);
     }
     return Container(
@@ -237,8 +239,6 @@ class _StudyScreenState extends State<StudyScreen>
     );
   }
 
-  // ---- Mode builders ----
-
   Widget _flipMode(BuildContext context) {
     final card = _queue[_index];
     return Column(
@@ -331,8 +331,6 @@ class _StudyScreenState extends State<StudyScreen>
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       ),
       onPressed: onPressed,
-      // FittedBox shrinks the pair to fit the button, so long words like
-      // "Again" never wrap and clip off the edge.
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Column(
@@ -348,14 +346,15 @@ class _StudyScreenState extends State<StudyScreen>
     );
   }
 
-  // ---- Build ----
-
   @override
   Widget build(BuildContext context) {
     if (_finished) {
       return _summary(context);
     }
     final total = _queue.length;
+    final cs = Theme.of(context).colorScheme;
+    final hintParts = <String>['$_remaining left'];
+    if (_againCount > 0) hintParts.add('$_againCount again');
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.deck.name),
@@ -385,7 +384,17 @@ class _StudyScreenState extends State<StudyScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hintParts.join(' · '),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(child: _flipMode(context)),
           ],
         ),
