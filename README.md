@@ -23,11 +23,11 @@ Offline-first flashcards with spaced repetition. No account, no ads, no network 
 ## Features
 
 - **Spaced repetition** with Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors
-- **Flip-card study** — tap to reveal the answer, grade your recall
+- **Tap-to-reveal study** — show the answer when ready, then grade your recall
 - **Rich answers** — bullet lists, numbered lists, indentation
 - **Image and audio cards** — attach pictures and recorded audio, play audio while studying
 - **Cloze cards** with Anki-style numbered deletions (`{{c1::text}}`); each deletion becomes its own card
-- **2,000+ searchable icons** — full Lucide set, auto-suggested from the deck name
+- **2,000+ searchable icons** — full Lucide set for every deck
 - **Statistics** — accuracy, mastered cards, full-year heatmap, streaks and daily goals
 - **Text to speech** (optional)
 - **Create cards from anywhere** — select text in any Android app and send it to Oncard
@@ -46,7 +46,9 @@ Prebuilt binaries are on the [releases page](https://github.com/josholaf/oncard/
 
 Every push to `main` is built by GitHub Actions. Release branches publish a versioned release.
 
-The Android APK is unsigned by CI. Enable install from unknown sources, then install `Oncard.apk`.
+The Android APK is unsigned by CI. Enable **Install unknown apps** for your browser or file manager, then install `Oncard.apk`.
+
+> Tip: if you already have an older build installed, uninstall it first or allow updates from the same signing source.
 
 ## Build from source
 
@@ -90,12 +92,9 @@ Header rows are detected and skipped. Separate multiple tags with `;`. Note and 
 
 ```
 lib/main.dart            App bootstrap and navigation shell
-lib/models.dart          Flashcard, Deck, DayLog
-lib/scheduler.dart       Spaced repetition scheduler
-lib/app_data.dart        State, persistence, goals, streaks
-lib/import_export.dart   CSV/TSV import, CSV export, JSON backup
-lib/rich_text.dart       Rich answer rendering (lists, indent)
-lib/lucide_icons.dart    Embedded Lucide icon set (ISC license)
+lib/data/                Models, scheduler, app state, sample decks
+lib/services/            Audio, sharing, import/export, widget sync
+lib/ui/                  Theme, shared widgets, rich text, icons
 lib/screens/             App screens
 test/                    Model, migration, scheduler and widget tests
 ```
@@ -106,7 +105,7 @@ Card content and review state are stored separately. Review state holds due date
 
 ## Contributing
 
-Bug reports and pull requests are welcome. Keep the app offline-first and avoid new package dependencies unless necessary.
+Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) when present. Keep the app offline-first and avoid new package dependencies unless necessary.
 
 ## License
 

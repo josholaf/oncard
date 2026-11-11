@@ -286,6 +286,48 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Bulk delete used by the card browser.
+  void deleteCards(String deckId, List<String> cardIds) {
+    final deck = deckById(deckId);
+    if (deck == null) return;
+    final ids = Set<String>.from(cardIds);
+    deck.cards.removeWhere((c) => ids.contains(c.id));
+    _save();
+    notifyListeners();
+  }
+
+  /// Moves cards to another deck, keeping all review state.
+  void moveCards(String fromDeckId, List<String> cardIds, String toDeckId) {
+    final from = deckById(fromDeckId);
+    final to = deckById(toDeckId);
+    if (from == null || to == null || fromDeckId == toDeckId) return;
+    final ids = Set<String>.from(cardIds);
+    final moved = from.cards.where((c) => ids.contains(c.id)).toList();
+    from.cards.removeWhere((c) => ids.contains(c.id));
+    to.cards.addAll(moved);
+    _save();
+    notifyListeners();
+  }
+
+  /// Adds or removes one tag on many cards at once.
+  void editTags(String deckId, List<String> cardIds,
+      {required bool add, required String tag}) {
+    final deck = deckById(deckId);
+    if (deck == null || tag.trim().isEmpty) return;
+    final ids = Set<String>.from(cardIds);
+    final clean = tag.trim();
+    for (final card in deck.cards) {
+      if (!ids.contains(card.id)) continue;
+      if (add) {
+        if (!card.tags.contains(clean)) card.tags = [...card.tags, clean];
+      } else {
+        card.tags = card.tags.where((t) => t != clean).toList();
+      }
+    }
+    _save();
+    notifyListeners();
+  }
+
   // ---- Study ----
 
   void recordReview(String deckId, Flashcard card, Grade grade) {
