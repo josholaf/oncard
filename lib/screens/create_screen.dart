@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../services/anki_import.dart';
 import '../data/app_data.dart';
+import '../ui/emoji_picker.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'card_editor_screen.dart';
@@ -204,7 +205,7 @@ class _NewDeckSheet extends StatefulWidget {
 class _NewDeckSheetState extends State<_NewDeckSheet> {
   final _name = TextEditingController();
   int _colorIndex = 0;
-  int _shuffle = 0;
+  String _icon = 'lucide:layers';
 
   static const List<String> _fallbackIcons = <String>[
     'layers', 'sparkles', 'rocket', 'brain', 'star', 'gem', 'zap', 'compass',
@@ -230,17 +231,23 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
     'kinya', 'languages', 'travel', 'plane', 'plane', 'plane',
   ];
 
-  /// Suggests an icon from the deck name, falling back to a rotating
-  /// list of pleasant defaults.
-  String _suggestIcon(String name) {
+  /// Suggests an icon from the deck name, falling back to a default.
+  String _suggestIconName(String name) {
     final n = name.trim().toLowerCase();
     for (var i = 0; i + 1 < _keywords.length; i += 2) {
       if (n.contains(_keywords[i])) return _keywords[i + 1];
     }
-    return _fallbackIcons[_shuffle % _fallbackIcons.length];
+    return _fallbackIcons[0];
   }
 
   bool get _valid => _name.text.trim().isNotEmpty;
+
+  Future<void> _pickIcon() async {
+    final chosen = await showEmojiPickerSheet(context, current: _icon);
+    if (chosen != null && mounted) {
+      setState(() => _icon = chosen);
+    }
+  }
 
   @override
   void dispose() {
@@ -251,7 +258,10 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final icon = _suggestIcon(_name.text);
+    // Keep auto-suggest while the user has not manually picked an icon
+    // and is still typing a name that matches a keyword.
+    final suggested = _suggestIconName(_name.text);
+    final displayIcon = _icon.startsWith('lucide:') ? _icon : 'lucide:$suggested';
     final tint = deckPalette[_colorIndex % deckPalette.length];
     return SafeArea(
       child: SingleChildScrollView(
@@ -269,35 +279,48 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                   labelText: 'Deck name',
                   border: OutlineInputBorder(),
                   hintText: 'e.g. Pharmacology'),
-              onChanged: (_) => setState(() {}),
+              onChanged: (value) {
+                // Auto-suggest only until the user opens the picker.
+                if (!_icon.contains('@') &&
+                    (_icon == 'lucide:layers' ||
+                        _icon == 'lucide:' + _suggestIconName(value))) {
+                  setState(() => _icon = 'lucide:' + _suggestIconName(value));
+                } else {
+                  setState(() {});
+                }
+              },
             ),
             const SizedBox(height: 16),
             Center(
               child: Column(
                 children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: cs.surfaceContainerLow,
-                    ),
-                    child: Center(
-                      child: DeckIcon(icon: 'lucide:' + icon, size: 40, color: tint),
+                  InkWell(
+                    onTap: _pickIcon,
+                    borderRadius: BorderRadius.circular(40),
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: cs.surfaceContainerLow,
+                      ),
+                      child: Center(
+                        child: DeckIcon(icon: displayIcon, size: 40, color: tint),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Icon picked from the name. Change it later.',
+                    'Tap the icon to choose from the full library',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
                         ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(() => _shuffle++),
-                    icon: const Icon(Icons.casino_rounded, size: 18),
-                    label: const Text('Shuffle icon'),
+                    onPressed: _pickIcon,
+                    icon: const Icon(Icons.grid_view_rounded, size: 18),
+                    label: const Text('Choose icon'),
                   ),
                 ],
               ),
@@ -339,7 +362,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                 onPressed: _valid
                     ? () {
                         widget.onCreate(
-                            _name.text.trim(), 'lucide:' + icon, _colorIndex);
+                            _name.text.trim(), displayIcon, _colorIndex);
                         Navigator.pop(context);
                       }
                     : null,
@@ -352,4 +375,3 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
     );
   }
 }
-
