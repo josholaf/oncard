@@ -60,16 +60,21 @@ class CountBadge extends StatelessWidget {
   }
 }
 
-/// Friendly empty state with icon and hint.
+/// Friendly empty state with icon, title, subtitle and optional action.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  const EmptyState(
-      {super.key,
-      required this.icon,
-      required this.title,
-      required this.subtitle});
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +103,10 @@ class EmptyState extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 20),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
           ],
         ),
       ),
@@ -122,7 +131,6 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tint = color ?? cs.primary;
-    // Dark mode: lighten icon colors so they read on dark surfaces.
     final shown = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(tint)
         : tint;
@@ -159,14 +167,11 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// Deck icons may carry a color suffix: 'lucide:book-2@#FF9800'.
-/// These helpers split the icon from its optional color.
 String iconBase(String icon) {
   final at = icon.indexOf('@');
   return at == -1 ? icon : icon.substring(0, at);
 }
 
-/// The color suffix of a deck icon, or null when it has none.
 Color? iconTint(String icon) {
   final at = icon.indexOf('@');
   if (at == -1) return null;
@@ -176,8 +181,6 @@ Color? iconTint(String icon) {
   return value == null ? null : Color(value);
 }
 
-/// Renders a deck icon that is either an emoji character or a
-/// 'lucide:<name>' reference from the Lucide icon set.
 class DeckIcon extends StatelessWidget {
   final String icon;
   final double size;
@@ -195,7 +198,6 @@ class DeckIcon extends StatelessWidget {
   }
 }
 
-/// Deck avatar: just the icon, tinted with the deck color. No circle.
 class DeckAvatar extends StatelessWidget {
   final String icon;
   final int colorIndex;
@@ -207,7 +209,6 @@ class DeckAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final base = iconTint(icon) ??
         deckPalette[colorIndex % deckPalette.length];
-    // Dark mode: lighten deck colors so icons stay high contrast.
     final tint = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(base)
         : base;
@@ -225,15 +226,8 @@ class DeckAvatar extends StatelessWidget {
   }
 }
 
-/// GitHub-style contribution heatmap of study activity.
-///
-/// Columns are weeks (most recent on the right), rows are weekdays, cells
-/// are colored in five steps from none to full intensity. Defaults to a
-/// full year, scaled to fit the card width. A Less/More legend sits below.
 class StudyHeatmap extends StatelessWidget {
   final Map<String, DayLog> byDate;
-
-  /// How many week columns to show, counting back from the current week.
   final int weeks;
 
   const StudyHeatmap({super.key, required this.byDate, this.weeks = 52});
@@ -261,8 +255,6 @@ class StudyHeatmap extends StatelessWidget {
       if (c > maxCount) maxCount = c;
     }
 
-    // Full year at a glance: cell size is derived from the available
-    // width, so every week and month label always fits the card.
     return LayoutBuilder(builder: (context, box) {
       final per = (box.maxWidth / weeks).clamp(4.0, 16.0).toDouble();
       final gap = per * 0.22;
