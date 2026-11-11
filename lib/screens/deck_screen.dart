@@ -168,59 +168,19 @@ class DeckScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: FilledButton.icon(
-                      onPressed: deck.cards.isEmpty
-                          ? null
-                          : () => Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                  builder: (_) => StudyScreen(
-                                      deck: deck, mode: StudyMode.flip))),
-                      icon: const Icon(Icons.style_rounded),
-                      label: const Text('Flip'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: FilledButton.tonalIcon(
-                      onPressed: deck.cards.length < 2
-                          ? null
-                          : () => Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                  builder: (_) => StudyScreen(
-                                      deck: deck, mode: StudyMode.quiz))),
-                      icon: const Icon(Icons.quiz_rounded),
-                      label: const Text('Quiz'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: FilledButton.tonalIcon(
-                      onPressed: deck.cards.isEmpty
-                          ? null
-                          : () => Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                  builder: (_) => StudyScreen(
-                                      deck: deck, mode: StudyMode.typing))),
-                      icon: const Icon(Icons.keyboard_rounded),
-                      label: const Text('Type'),
-                    ),
-                  ),
-                ),
-              ],
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: deck.cards.isEmpty
+                    ? null
+                    : () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                            builder: (_) => StudyScreen(
+                                deck: deck, mode: StudyMode.flip))),
+                icon: const Icon(Icons.style_rounded),
+                label: const Text('Study'),
+              ),
             ),
           ),
           Expanded(

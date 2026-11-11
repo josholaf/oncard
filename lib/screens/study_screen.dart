@@ -13,8 +13,8 @@ import '../occlusion.dart';
 import '../rich_text.dart';
 import '../scheduler.dart';
 
-/// The three ways to study a deck.
-enum StudyMode { flip, quiz, typing }
+/// The way to study a deck: flip cards.
+enum StudyMode { flip }
 
 /// Lazily created text-to-speech engine. Never constructed unless the user
 /// enables TTS in settings, so tests and non-supported platforms are safe.
@@ -22,9 +22,12 @@ class Tts {
   static FlutterTts? _instance;
 
   static Future<void> speak(String text) async {
+    if (text.trim().isEmpty) return;
     try {
       final tts = _instance ??= FlutterTts();
-      await tts.setLanguage('en-US');
+      // No pinned language: the platform's own native voice speaks,
+      // following the device language and installed voices.
+      await tts.stop();
       await tts.speak(text);
     } catch (_) {
       // TTS unavailable on this platform: silently ignore.
@@ -57,26 +60,17 @@ class _StudyScreenState extends State<StudyScreen>
   final List<Grade> _grades = <Grade>[];
   int _index = 0;
   bool _showBack = false;
-  bool _answered = false; // quiz/typing feedback state
-  bool? _lastCorrect;
-
-  // Quiz mode: shuffled options for the current card.
-  List<String> _options = <String>[];
-
-  final TextEditingController _typing = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _queue = widget.deck.cards.where((c) => c.isDue).toList()
       ..sort((a, b) => a.due.compareTo(b.due));
-    _buildOptions();
   }
 
   @override
   void dispose() {
     _flip.dispose();
-    _typing.dispose();
     Tts.stop();
     super.dispose();
   }
@@ -88,40 +82,18 @@ class _StudyScreenState extends State<StudyScreen>
 
   int get _total => _grades.length;
 
-  void _buildOptions() {
-    if (_finished || widget.mode != StudyMode.quiz) {
-      _options = <String>[];
-      return;
-    }
-    final card = _queue[_index];
-    final others = widget.deck.cards
-        .map((c) => c.answer)
-        .where((a) => a != card.answer)
-        .toSet()
-        .toList()
-      ..shuffle(math.Random());
-    _options = <String>[card.answer, ...others.take(3)]..shuffle();
-  }
-
   void _advance(Grade grade) {
     final card = _queue[_index];
     context.read<AppData>().recordReview(widget.deck.id, card, grade);
-    setState(() {
-      _grades.add(grade);
-      _lastCorrect = grade != Grade.again;
-      _answered = true;
-    });
+    setState(() => _grades.add(grade));
   }
 
   void _next() {
     _flip.stop();
     _flip.value = 0;
-    _typing.clear();
     setState(() {
-      _answered = false;
       _showBack = false;
       _index += 1;
-      _buildOptions();
     });
   }
 
@@ -376,136 +348,6 @@ class _StudyScreenState extends State<StudyScreen>
     );
   }
 
-  Widget _quizMode(BuildContext context) {
-    final card = _queue[_index];
-    final cs = Theme.of(context).colorScheme;
-    if (_options.length < 2) {
-      // Not enough distinct answers for a real quiz. Fall back to flip.
-      return _flipMode(context);
-    }
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Center(
-              child: Text(
-                Cloze.blanked(card.question, card.clozeIndex),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        for (final option in _options)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: _answered && option == card.answer
-                      ? const Color(0xFF39845B).withOpacity(0.15)
-                      : (_answered &&
-                              option != card.answer &&
-                              _lastCorrect == false
-                          ? const Color(0xFF9C4146).withOpacity(0.15)
-                          : null),
-                  foregroundColor: _answered && option == card.answer
-                      ? const Color(0xFF39845B)
-                      : cs.onSurface,
-                ),
-                onPressed: _answered
-                    ? null
-                    : () => _gradeAndAdvance(
-                        option == card.answer ? Grade.good : Grade.again),
-                child: Text(
-                  RichMarkup.stripMarkup(option),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        if (context.read<AppData>().ttsEnabled)
-          IconButton(
-            tooltip: 'Listen',
-            icon: const Icon(Icons.volume_up_rounded),
-            onPressed: () => Tts.speak(Cloze.stripped(card.question)),
-          ),
-      ],
-    );
-  }
-
-  Widget _typingMode(BuildContext context) {
-    final card = _queue[_index];
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Center(
-              child: Text(
-                Cloze.blanked(card.question, card.clozeIndex),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _typing,
-          enabled: !_answered,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _submitTyped(),
-          decoration: InputDecoration(
-            hintText: 'Type the answer',
-            border: const OutlineInputBorder(),
-            filled: true,
-            fillColor: cs.surfaceContainerHigh,
-            errorText: _answered && _lastCorrect == false
-                ? 'Correct answer: ${RichMarkup.stripMarkup(card.answer)}'
-                : null,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _answered ? _next : _submitTyped,
-            child: Text(_answered ? 'Continue' : 'Check'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _submitTyped() {
-    if (_typing.text.trim().isEmpty) return;
-    final card = _queue[_index];
-    final correct = _normalize(_typing.text) ==
-        _normalize(RichMarkup.stripMarkup(card.answer));
-    _gradeAndAdvance(correct ? Grade.good : Grade.again);
-  }
-
-  static String _normalize(String s) => s
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^\p{L}\p{N}\s]', unicode: true), '')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
-
   // ---- Build ----
 
   @override
@@ -544,13 +386,7 @@ class _StudyScreenState extends State<StudyScreen>
               ],
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: switch (widget.mode) {
-                StudyMode.flip => _flipMode(context),
-                StudyMode.quiz => _quizMode(context),
-                StudyMode.typing => _typingMode(context),
-              },
-            ),
+            Expanded(child: _flipMode(context)),
           ],
         ),
       ),
