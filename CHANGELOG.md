@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1+12
+
+- Accessibility: semantics labels on mastery dots, badges, empty states, stats and heatmap
+- Library: sort decks by cards due
+- Study: remaining cards and “again” count under progress
+- Settings: confirm before restore that replaces all local data
+- CSV import: clearer errors for empty, short, or unreadable files
+- README: clearer Download section and feature list
+
 ## 2.0.0+11
 
 - New card browser: search across question, answer, note and tags
