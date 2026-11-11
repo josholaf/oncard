@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -52,10 +51,7 @@ class StudyScreen extends StatefulWidget {
   State<StudyScreen> createState() => _StudyScreenState();
 }
 
-class _StudyScreenState extends State<StudyScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _flip = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 400));
+class _StudyScreenState extends State<StudyScreen> {
   late final List<Flashcard> _queue;
   final List<Grade> _grades = <Grade>[];
   int _index = 0;
@@ -70,7 +66,6 @@ class _StudyScreenState extends State<StudyScreen>
 
   @override
   void dispose() {
-    _flip.dispose();
     Tts.stop();
     super.dispose();
   }
@@ -89,8 +84,6 @@ class _StudyScreenState extends State<StudyScreen>
   }
 
   void _next() {
-    _flip.stop();
-    _flip.value = 0;
     setState(() {
       _showBack = false;
       _index += 1;
@@ -105,17 +98,13 @@ class _StudyScreenState extends State<StudyScreen>
     Future<void>.delayed(const Duration(milliseconds: 700), _next);
   }
 
-  void _flipCard() {
-    if (_showBack) {
-      _flip.reverse();
-    } else {
-      _flip.forward();
-      final card = _queue[_index];
-      if (context.read<AppData>().ttsEnabled && card.answer.isNotEmpty) {
-        Tts.speak(RichMarkup.stripMarkup(card.answer));
-      }
+  void _revealAnswer() {
+    if (_showBack) return;
+    final card = _queue[_index];
+    if (context.read<AppData>().ttsEnabled && card.answer.isNotEmpty) {
+      Tts.speak(RichMarkup.stripMarkup(card.answer));
     }
-    setState(() => _showBack = !_showBack);
+    setState(() => _showBack = true);
   }
 
   // ---- Flip mode face ----
@@ -245,21 +234,15 @@ class _StudyScreenState extends State<StudyScreen>
       children: [
         Expanded(
           child: GestureDetector(
-            onTap: _flipCard,
-            child: AnimatedBuilder(
-              animation: _flip,
-              builder: (context, child) {
-                final showingFront = _flip.value < 0.5;
-                final angle = _flip.value * math.pi;
-                return Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateY(
-                        showingFront ? angle : angle - math.pi),
-                  child: showingFront ? _face(context, false) : _face(context, true),
-                );
-              },
+            onTap: _revealAnswer,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: KeyedSubtree(
+                key: ValueKey<bool>(_showBack),
+                child: _face(context, _showBack),
+              ),
             ),
           ),
         ),
@@ -268,7 +251,7 @@ class _StudyScreenState extends State<StudyScreen>
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _flipCard,
+              onPressed: _revealAnswer,
               icon: const Icon(Icons.visibility_rounded),
               label: const Text('Show answer'),
             ),
