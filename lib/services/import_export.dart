@@ -10,6 +10,12 @@ import '../data/app_data.dart';
 import '../data/models.dart';
 import 'share.dart';
 
+void _snack(BuildContext context, String message) {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(message)));
+}
+
 /// CSV/TSV import. Columns: question,answer,note,tags (tags split by ';').
 Future<int> importCsvFile(BuildContext context, AppData data, String deckId,
     {bool tsv = false}) async {
@@ -19,14 +25,27 @@ Future<int> importCsvFile(BuildContext context, AppData data, String deckId,
     withData: true,
   );
   if (picked == null) return 0;
-  final bytes = picked.files.single.bytes;
-  if (bytes == null) return 0;
-  final converter = tsv
-      ? const CsvToListConverter(eol: '\n', fieldDelimiter: '\t')
-      : const CsvToListConverter(eol: '\n');
-  final rows = converter.convert(utf8.decode(bytes));
+  final file = picked.files.single;
+  final bytes = file.bytes;
+  if (bytes == null || bytes.isEmpty) {
+    _snack(context, 'Could not read that file. Try a smaller CSV or TSV.');
+    return 0;
+  }
+
+  List<List<dynamic>> rows;
+  try {
+    final converter = tsv
+        ? const CsvToListConverter(eol: '\n', fieldDelimiter: '\t')
+        : const CsvToListConverter(eol: '\n');
+    rows = converter.convert(utf8.decode(bytes));
+  } catch (_) {
+    _snack(context, 'That file is not valid ${tsv ? 'TSV' : 'CSV'}.');
+    return 0;
+  }
+
   final cards = <Flashcard>[];
   var first = true;
+  var skippedShort = 0;
   for (final row in rows) {
     final values = row.map((e) => e.toString().trim()).toList();
     if (values.isEmpty || values.first.isEmpty) continue;
@@ -37,7 +56,10 @@ Future<int> importCsvFile(BuildContext context, AppData data, String deckId,
       continue;
     }
     first = false;
-    if (values.length < 2) continue;
+    if (values.length < 2) {
+      skippedShort += 1;
+      continue;
+    }
     final note = values.length > 2 ? values[2] : '';
     final tags = values.length > 3
         ? values[3]
@@ -53,18 +75,23 @@ Future<int> importCsvFile(BuildContext context, AppData data, String deckId,
         note: note,
         tags: tags));
   }
+
   if (cards.isEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No cards found in that file.')));
+    if (skippedShort > 0) {
+      _snack(context,
+          'No cards imported. $skippedShort row(s) need at least question and answer columns.');
+    } else {
+      _snack(context,
+          'No cards found. Use columns: question,answer,note,tags');
     }
     return 0;
   }
+
   data.addCards(deckId, cards);
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Imported ${cards.length} cards into this deck.')));
-  }
+  final extra = skippedShort > 0
+      ? ' ($skippedShort row(s) skipped — need question and answer)'
+      : '';
+  _snack(context, 'Imported ${cards.length} cards into this deck.$extra');
   return cards.length;
 }
 
