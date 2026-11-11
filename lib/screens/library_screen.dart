@@ -10,7 +10,7 @@ import 'browser_screen.dart';
 import 'create_screen.dart';
 import 'deck_screen.dart';
 
-enum _SortBy { name, recent, progress }
+enum _SortBy { name, recent, progress, due }
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -43,6 +43,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         break;
       case _SortBy.progress:
         decks.sort((a, b) => b.progress.compareTo(a.progress));
+        break;
+      case _SortBy.due:
+        decks.sort((a, b) => b.dueCount.compareTo(a.dueCount));
         break;
     }
     return decks;
@@ -254,6 +257,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         value: _SortBy.recent, child: Text('Recently studied')),
                     PopupMenuItem(
                         value: _SortBy.progress, child: Text('Progress')),
+                    PopupMenuItem(
+                        value: _SortBy.due, child: Text('Cards due')),
                   ],
                 ),
               ],
