@@ -7,6 +7,7 @@ import '../ui/emoji_picker.dart';
 import '../services/import_export.dart';
 import '../ui/rich_text.dart';
 import '../ui/widgets.dart';
+import 'browser_screen.dart';
 import 'card_editor_screen.dart';
 import 'study_screen.dart';
 
@@ -81,6 +82,14 @@ class DeckScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(deck.name),
         actions: [
+          IconButton(
+            tooltip: 'Browse cards',
+            icon: const Icon(Icons.manage_search_rounded),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) => BrowserScreen(deckId: deckId))),
+          ),
           IconButton(
             tooltip: deck.favorite ? 'Unfavorite' : 'Favorite',
             icon: Icon(deck.favorite

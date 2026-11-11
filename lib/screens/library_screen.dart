@@ -6,6 +6,7 @@ import '../ui/emoji_picker.dart';
 import '../services/import_export.dart';
 import '../data/models.dart';
 import '../ui/widgets.dart';
+import 'browser_screen.dart';
 import 'create_screen.dart';
 import 'deck_screen.dart';
 
@@ -191,6 +192,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
       appBar: AppBar(
         title: const Text('Library'),
         actions: [
+          IconButton(
+            tooltip: 'Browse all cards',
+            icon: const Icon(Icons.manage_search_rounded),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) => const BrowserScreen())),
+          ),
           IconButton(
             tooltip: _grid ? 'List view' : 'Grid view',
             icon: Icon(
