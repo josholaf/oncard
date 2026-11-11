@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../emoji_picker.dart';
-import '../import_export.dart';
-import '../models.dart';
-import '../widgets.dart';
+import '../data/app_data.dart';
+import '../ui/emoji_picker.dart';
+import '../services/import_export.dart';
+import '../data/models.dart';
+import '../ui/widgets.dart';
 import 'create_screen.dart';
 import 'deck_screen.dart';
 

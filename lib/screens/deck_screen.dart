@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../emoji_picker.dart';
-import '../import_export.dart';
-import '../rich_text.dart';
-import '../widgets.dart';
+import '../data/app_data.dart';
+import '../ui/emoji_picker.dart';
+import '../services/import_export.dart';
+import '../ui/rich_text.dart';
+import '../ui/widgets.dart';
 import 'card_editor_screen.dart';
 import 'study_screen.dart';
 

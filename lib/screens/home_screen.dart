@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../models.dart';
-import '../theme.dart';
-import '../update_bar.dart';
-import '../widgets.dart';
+import '../data/app_data.dart';
+import '../data/models.dart';
+import '../ui/theme.dart';
+import '../ui/update_bar.dart';
+import '../ui/widgets.dart';
 import 'profile_screen.dart';
 import 'study_screen.dart';
 
