@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../data/app_data.dart';
 import '../data/models.dart';
@@ -13,20 +14,23 @@ class MasteryDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (i) {
-        final filled = i < mastery;
-        return Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(right: 4),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: filled ? cs.primary : cs.surfaceContainerHighest,
-          ),
-        );
-      }),
+    return Semantics(
+      label: 'Mastery $mastery of 5',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(5, (i) {
+          final filled = i < mastery;
+          return Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: filled ? cs.primary : cs.surfaceContainerHighest,
+            ),
+          );
+        }),
+      ),
     );
   }
 }
@@ -42,18 +46,21 @@ class CountBadge extends StatelessWidget {
     final fg = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(color)
         : color;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: fg,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -73,32 +80,36 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              ),
-              child: Icon(icon,
-                  size: 40,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            Text(title,
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center),
-            const SizedBox(height: 6),
-            Text(subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    return Semantics(
+      container: true,
+      label: '$title. $subtitle',
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
+                child: Icon(icon,
+                    size: 40,
                     color: Theme.of(context).colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center),
-          ],
+              ),
+              const SizedBox(height: 16),
+              Text(title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 6),
+              Text(subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  textAlign: TextAlign.center),
+            ],
+          ),
         ),
       ),
     );
@@ -126,33 +137,36 @@ class StatCard extends StatelessWidget {
     final shown = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(tint)
         : tint;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: shown.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
+    return Semantics(
+      label: '$label: $value',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: shown.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: shown),
               ),
-              child: Icon(icon, size: 18, color: shown),
-            ),
-            const SizedBox(height: 12),
-            Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text(label,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant)),
-          ],
+              const SizedBox(height: 12),
+              Text(value,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant)),
+            ],
+          ),
         ),
       ),
     );
@@ -319,44 +333,47 @@ class StudyHeatmap extends StatelessWidget {
       }
       flushMonth();
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: monthSegments),
-          const SizedBox(height: 4),
-          Row(children: columns),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text('Less',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
-              const SizedBox(width: 4),
-              for (final opacity in _levelOpacity)
-                Container(
-                  width: 10,
-                  height: 10,
-                  margin: const EdgeInsets.only(right: 2),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    color: opacity == 0
-                        ? cs.surfaceContainerHighest.withOpacity(0.6)
-                        : cs.primary.withOpacity(opacity),
+      return Semantics(
+        label: 'Study activity heatmap for the past $weeks weeks',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: monthSegments),
+            const SizedBox(height: 4),
+            Row(children: columns),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text('Less',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+                const SizedBox(width: 4),
+                for (final opacity in _levelOpacity)
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: const EdgeInsets.only(right: 2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      color: opacity == 0
+                          ? cs.surfaceContainerHighest.withOpacity(0.6)
+                          : cs.primary.withOpacity(opacity),
+                    ),
                   ),
-                ),
-              const SizedBox(width: 2),
-              Text('More',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
-            ],
-          ),
-        ],
+                const SizedBox(width: 2),
+                Text('More',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ],
+        ),
       );
     });
   }
