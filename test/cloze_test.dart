@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oncard/cloze.dart';
+import 'package:oncard/ui/cloze.dart';
 
 void main() {
   test('detects numbered and bare cloze markers', () {

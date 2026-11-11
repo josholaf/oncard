@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:oncard/models.dart';
-import 'package:oncard/sample_decks.dart';
-import 'package:oncard/scheduler.dart';
+import 'package:oncard/data/models.dart';
+import 'package:oncard/data/sample_decks.dart';
+import 'package:oncard/data/scheduler.dart';
 
 void main() {
   test('flashcard survives a JSON round trip', () {

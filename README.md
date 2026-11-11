@@ -90,12 +90,9 @@ Header rows are detected and skipped. Separate multiple tags with `;`. Note and 
 
 ```
 lib/main.dart            App bootstrap and navigation shell
-lib/models.dart          Flashcard, Deck, DayLog
-lib/scheduler.dart       Spaced repetition scheduler
-lib/app_data.dart        State, persistence, goals, streaks
-lib/import_export.dart   CSV/TSV import, CSV export, JSON backup
-lib/rich_text.dart       Rich answer rendering (lists, indent)
-lib/lucide_icons.dart    Embedded Lucide icon set (ISC license)
+lib/data/                Models, scheduler, app state, sample decks
+lib/services/            Audio, sharing, import/export, widget sync
+lib/ui/                  Theme, shared widgets, rich text, icons
 lib/screens/             App screens
 test/                    Model, migration, scheduler and widget tests
 ```
