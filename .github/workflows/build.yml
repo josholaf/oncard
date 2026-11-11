@@ -68,8 +68,14 @@ jobs:
 
       - name: Render app icon from logo.svg
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends librsvg2-bin imagemagick
+          # Retry: runner apt mirrors occasionally fail DNS resolution.
+          for attempt in 1 2 3; do
+            if sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends librsvg2-bin imagemagick; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then echo 'apt install failed after 3 attempts'; exit 1; fi
+            echo "apt failed, retrying ($attempt)"; sleep 20
+          done
           for size in 48 72 96 144 192 256; do
             rsvg-convert -w $size -h $size assets/logo.svg -o icon$size.png
           done
