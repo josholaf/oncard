@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../models.dart';
+import '../data/app_data.dart';
+import '../data/models.dart';
 
 /// Asks Android for text the user selected in another app (the
 /// PROCESS_TEXT flow). If any is pending, opens the quick-add screen.

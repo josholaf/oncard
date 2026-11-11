@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../import_export.dart';
+import '../data/app_data.dart';
+import '../services/import_export.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

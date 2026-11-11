@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../models.dart';
-import '../widgets.dart';
+import '../data/app_data.dart';
+import '../data/models.dart';
+import '../ui/widgets.dart';
 
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});

@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
-import '../audio.dart';
-import '../cloze.dart';
-import '../models.dart';
-import '../occlusion.dart';
-import '../rich_text.dart';
-import '../scheduler.dart';
+import '../data/app_data.dart';
+import '../services/audio.dart';
+import '../ui/cloze.dart';
+import '../data/models.dart';
+import '../ui/occlusion.dart';
+import '../ui/rich_text.dart';
+import '../data/scheduler.dart';
 
 /// The way to study a deck: flip cards.
 enum StudyMode { flip }
