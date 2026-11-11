@@ -1,4 +1,4 @@
-name: Build Oncard (Android + Windows)
+name: Build Oncard (Android)
 
 on:
   push:
@@ -78,13 +78,6 @@ jobs:
             cp icon$size.png android/app/src/main/res/mipmap-$dir/ic_launcher.png
             cp icon$size.png android/app/src/main/res/mipmap-$dir/ic_launcher_round.png
           done
-          convert -background none icon256.png -define icon:auto-resize=256,128,64,48,32,16 app_icon.ico
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: app-icon-ico
-          path: app_icon.ico
-
       - run: flutter build apk --release
 
       - uses: actions/upload-artifact@v4
@@ -135,59 +128,3 @@ jobs:
             gh release upload "$VERSION" Oncard-Play.aab --clobber
           fi
 
-  windows:
-    if: github.ref_name != 'main'
-    needs: build
-    # Pin the 2022 image: it ships the Visual Studio toolchain that
-    # Flutter 3.24.5 expects. windows-latest moved on to a newer one.
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.24.5
-          channel: stable
-          cache: true
-
-      - run: flutter pub get
-
-      - name: Generate Windows platform folder
-        run: flutter create --platforms=windows --project-name=oncard .
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: app-icon-ico
-
-      - name: Set app icon
-        shell: bash
-        run: cp app_icon.ico windows/runner/resources/app_icon.ico
-
-      - run: flutter build windows --release
-
-      - name: Package Windows build
-        shell: pwsh
-        run: Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath 'Oncard-Windows-x64.zip'
-
-      - name: Build installer with Inno Setup
-        shell: pwsh
-        run: |
-          choco install innosetup -y --no-progress
-          $version = "${env:GITHUB_REF_NAME}".Replace('release/', '').TrimStart('v')
-          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$version" 'scripts\oncard.iss'
-
-      - name: Attach Windows build to release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for i in $(seq 1 12); do
-            gh release upload "${GITHUB_REF_NAME#release/}" Oncard-Windows-x64.zip --clobber && break
-            sleep 30
-          done
-          for i in $(seq 1 12); do
-            gh release upload "${GITHUB_REF_NAME#release/}" installer/Oncard-Setup.exe --clobber && exit 0
-            sleep 30
-          done
-          echo "installer upload failed" >&2
-          exit 1

@@ -10,7 +10,7 @@ Offline-first flashcards with spaced repetition. No account, no ads, no network 
 
 <img src="https://img.shields.io/badge/Flutter-3.24-02569B?logo=flutter&logoColor=white" alt="Flutter 3.24"/>
 <img src="https://img.shields.io/badge/Dart-3.5-0175C2?logo=dart&logoColor=white" alt="Dart 3.5"/>
-<img src="https://img.shields.io/badge/platform-Android%20%7C%20Windows-green" alt="Android and Windows"/>
+<img src="https://img.shields.io/badge/platform-Android-green" alt="Android"/>
 <img src="https://img.shields.io/badge/license-MIT-black" alt="MIT license"/>
 <img src="https://img.shields.io/github/v/release/josholaf/oncard?logo=github" alt="latest release"/>
 
@@ -23,12 +23,12 @@ Offline-first flashcards with spaced repetition. No account, no ads, no network 
 ## Features
 
 - **Spaced repetition** with Again / Hard / Good / Easy grades, per-card due dates, adaptive intervals and ease factors
-- **Three study modes** — flip cards, multiple choice, type the answer
+- **Flip-card study** — tap to reveal the answer, grade your recall
 - **Rich answers** — bullet lists, numbered lists, indentation
 - **Image and audio cards** — attach pictures and recorded audio, play audio while studying
 - **Cloze cards** with Anki-style numbered deletions (`{{c1::text}}`); each deletion becomes its own card
 - **2,000+ searchable icons** — full Lucide set, auto-suggested from the deck name
-- **Statistics** — accuracy, mastered cards, weekly activity, 12-week heatmap, streaks and daily goals
+- **Statistics** — accuracy, mastered cards, full-year heatmap, streaks and daily goals
 - **Text to speech** (optional)
 - **Create cards from anywhere** — select text in any Android app and send it to Oncard
 - **Import / export** — CSV and TSV import, CSV export, full JSON backup and restore
@@ -43,8 +43,6 @@ Prebuilt binaries are on the [releases page](https://github.com/josholaf/oncard/
 | File | Platform |
 | --- | --- |
 | `Oncard.apk` | Android (requires 6.0 or newer) |
-| `Oncard-Setup.exe` | Windows installer |
-| `Oncard-Windows-x64.zip` | Windows, portable |
 
 Every push to `main` is built by GitHub Actions. Release branches publish a versioned release.
 
@@ -76,7 +74,7 @@ python3 scripts/setup_process_text.py
 flutter build apk --release
 ```
 
-The `android/` and `windows/` folders are generated, not committed. `scripts/setup_process_text.py` patches the generated manifest for the text selection feature. CI does the same.
+The `android/` folder is generated, not committed. `scripts/setup_process_text.py` patches the generated manifest for the text selection feature. CI does the same.
 
 ## Import format
 

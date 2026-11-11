@@ -240,6 +240,11 @@ class StudyHeatmap extends StatelessWidget {
 
   static const List<double> _levelOpacity = <double>[0, 0.25, 0.45, 0.7, 1.0];
 
+  static const List<String> _monthShort = <String>[
+    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -256,70 +261,103 @@ class StudyHeatmap extends StatelessWidget {
       if (c > maxCount) maxCount = c;
     }
 
-    // Full year at a glance: small cells scaled down to the card
-    // width, so older months never leave the card.
-    final columns = <Widget>[];
-    for (var w = 0; w < weeks; w++) {
-      final cells = <Widget>[];
-      for (var d = 0; d < 7; d++) {
-        final date = firstDay.add(Duration(days: w * 7 + d));
-        final count = countOn(date);
-        final isFuture = date.isAfter(today);
-        final level = count == 0 || isFuture
-            ? 0
-            : (((count - 1) / maxCount * 3).round() + 1).clamp(1, 4).toInt();
-        cells.add(Container(
-          width: 5,
-          height: 5,
-          margin: const EdgeInsets.all(0.75),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(1.5),
-            color: level == 0
-                ? cs.surfaceContainerHighest.withOpacity(0.6)
-                : cs.primary.withOpacity(_levelOpacity[level]),
-          ),
+    // Full year at a glance: cell size is derived from the available
+    // width, so every week and month label always fits the card.
+    return LayoutBuilder(builder: (context, box) {
+      final per = (box.maxWidth / weeks).clamp(4.0, 16.0).toDouble();
+      final gap = per * 0.22;
+      final cell = per - gap;
+      final columns = <Widget>[];
+      final monthSegments = <Widget>[];
+      var run = 0;
+      var runMonth = -1;
+      void flushMonth() {
+        if (runMonth == -1) return;
+        monthSegments.add(SizedBox(
+          width: run * per,
+          child: Text(_monthShort[runMonth],
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant)),
         ));
       }
-      columns.add(Column(children: cells));
-    }
+      for (var w = 0; w < weeks; w++) {
+        final cells = <Widget>[];
+        for (var d = 0; d < 7; d++) {
+          final date = firstDay.add(Duration(days: w * 7 + d));
+          final count = countOn(date);
+          final isFuture = date.isAfter(today);
+          final level = count == 0 || isFuture
+              ? 0
+              : (((count - 1) / maxCount * 3).round() + 1)
+                  .clamp(1, 4)
+                  .toInt();
+          cells.add(Container(
+            width: cell,
+            height: cell,
+            margin: EdgeInsets.symmetric(horizontal: gap / 2, vertical: gap / 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(cell * 0.3),
+              color: level == 0
+                  ? cs.surfaceContainerHighest.withOpacity(0.6)
+                  : cs.primary.withOpacity(_levelOpacity[level]),
+            ),
+          ));
+        }
+        columns.add(Column(children: cells));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(children: columns),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Text('Less',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
-            const SizedBox(width: 4),
-            for (final opacity in _levelOpacity)
-              Container(
-                width: 10,
-                height: 10,
-                margin: const EdgeInsets.only(right: 2),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  color: opacity == 0
-                      ? cs.surfaceContainerHighest.withOpacity(0.6)
-                      : cs.primary.withOpacity(opacity),
+        final month = firstDay.add(Duration(days: w * 7)).month;
+        if (month != runMonth) {
+          flushMonth();
+          run = 0;
+          runMonth = month;
+        }
+        run++;
+      }
+      flushMonth();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: monthSegments),
+          const SizedBox(height: 4),
+          Row(children: columns),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text('Less',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 4),
+              for (final opacity in _levelOpacity)
+                Container(
+                  width: 10,
+                  height: 10,
+                  margin: const EdgeInsets.only(right: 2),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    color: opacity == 0
+                        ? cs.surfaceContainerHighest.withOpacity(0.6)
+                        : cs.primary.withOpacity(opacity),
+                  ),
                 ),
-              ),
-            const SizedBox(width: 2),
-            Text('More',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
-          ],
-        ),
-      ],
-    );
+              const SizedBox(width: 2),
+              Text('More',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ],
+      );
+    });
   }
 }
