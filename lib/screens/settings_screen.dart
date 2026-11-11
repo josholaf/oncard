@@ -20,6 +20,28 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmRestore(BuildContext context, AppData data) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore backup?'),
+        content: const Text(
+            'This replaces every deck, card and study history on this device with the contents of the backup file. Export a backup first if you might need the current data.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Choose file')),
+        ],
+      ),
+    );
+    if (ok == true && context.mounted) {
+      await restoreBackupFile(context, data);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
@@ -87,7 +109,7 @@ class SettingsScreen extends StatelessWidget {
                   title: const Text('Restore backup'),
                   subtitle:
                       const Text('Replace current data with a backup file'),
-                  onTap: () => restoreBackupFile(context, data),
+                  onTap: () => _confirmRestore(context, data),
                 ),
                 ListTile(
                   leading: Icon(Icons.delete_forever_rounded, color: cs.error),
@@ -133,4 +155,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
