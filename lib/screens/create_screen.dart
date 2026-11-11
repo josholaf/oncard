@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../anki_import.dart';
-import '../app_data.dart';
-import '../theme.dart';
-import '../widgets.dart';
+import '../services/anki_import.dart';
+import '../data/app_data.dart';
+import '../ui/theme.dart';
+import '../ui/widgets.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
 import 'online_decks_screen.dart';

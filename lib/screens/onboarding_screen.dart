@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
+import '../data/app_data.dart';
 
 /// First-launch introduction. Skippable, shown only while
 /// [AppData.onboarded] is false.
