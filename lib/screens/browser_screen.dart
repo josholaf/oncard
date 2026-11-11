@@ -340,10 +340,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
         ],
       ),
       bottomNavigationBar: selecting
-          ? SafeArea(
-              child: NavigationBar(
-                height: 64,
-                destinations: [
+          ? BottomAppBar(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
                   IconButton(
                     tooltip: 'Move to deck',
                     icon: const Icon(Icons.drive_file_move_rounded),
