@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../app_data.dart';
+import '../data/app_data.dart';
 
 /// Profile and account settings. Guests stay local-only.
 class ProfileScreen extends StatelessWidget {

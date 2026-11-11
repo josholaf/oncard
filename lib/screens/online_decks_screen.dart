@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../anki_import.dart';
-import '../app_data.dart';
-import '../online_decks.dart';
+import '../services/anki_import.dart';
+import '../data/app_data.dart';
+import '../services/online_decks.dart';
 
 /// Searches AnkiWeb shared decks and imports a picked deck in place.
 class OnlineDecksScreen extends StatefulWidget {
