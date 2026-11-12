@@ -377,8 +377,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               decoration: const InputDecoration(
                   labelText: 'Question (front)',
                   border: OutlineInputBorder(),
-                  hintText:
-                      'Or write a cloze sentence like: The heart has {{c1::four}} chambers'),
+                  hintText: 'Question'),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Question is required' : null,
             ),
@@ -447,7 +446,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               decoration: const InputDecoration(
                   labelText: 'Answer (back)',
                   border: OutlineInputBorder(),
-                  hintText: 'The main() function, which calls runApp().'),
+                  hintText: 'Answer'),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) &&
                           !Cloze.hasCloze(_question.text)

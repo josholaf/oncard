@@ -22,7 +22,6 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   String _query = '';
   bool _favoritesOnly = false;
-  bool _grid = false;
   _SortBy _sort = _SortBy.recent;
 
   List<Deck> _visible(AppData data) {
@@ -190,6 +189,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final data = context.watch<AppData>();
     final decks = _visible(data);
     final cs = Theme.of(context).colorScheme;
+    final grid = data.libraryGrid;
 
     return Scaffold(
       appBar: AppBar(
@@ -204,10 +204,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     builder: (_) => const BrowserScreen())),
           ),
           IconButton(
-            tooltip: _grid ? 'List view' : 'Grid view',
+            tooltip: grid ? 'List view' : 'Grid view',
             icon: Icon(
-                _grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
-            onPressed: () => setState(() => _grid = !_grid),
+                grid ? Icons.view_list_rounded : Icons.grid_view_rounded),
+            onPressed: () => data.setLibraryGrid(!grid),
           ),
           IconButton(
             tooltip: 'New deck',
@@ -271,7 +271,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     title: 'No decks found',
                     subtitle:
                         'Try a different search, or create a new deck with the + button.')
-                : _grid
+                : grid
                     ? GridView.builder(
                         padding: const EdgeInsets.all(20),
                         gridDelegate:

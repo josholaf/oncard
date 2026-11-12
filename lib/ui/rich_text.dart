@@ -54,8 +54,18 @@ class RichMarkup {
         final bg = m[4] != null && colors[m[4]] != null
             ? colors[m[4]]!.withOpacity(0.45)
             : highlight;
-        spans.add(
-            TextSpan(text: m[5], style: base.copyWith(backgroundColor: bg)));
+        // Rounded pill highlight instead of a rectangular background.
+        spans.add(WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(m[5]!, style: base),
+            )));
       } else {
         spans.add(
             TextSpan(text: m[7], style: base.copyWith(color: colors[m[6]])));
