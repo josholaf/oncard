@@ -7,7 +7,6 @@ import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
-import 'online_decks_screen.dart';
 
 /// The Create tab: quick actions for decks, cards and imports.
 class CreateScreen extends StatelessWidget {
@@ -59,15 +58,6 @@ class CreateScreen extends StatelessWidget {
             : 'No importable cards found in that file.')));
   }
 
-  /// Opens the AnkiWeb shared deck search; downloaded decks are
-  /// saved locally like any other deck.
-  Future<void> _searchOnline(BuildContext context) {
-    return Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-            builder: (_) => const OnlineDecksScreen()));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,13 +91,6 @@ class CreateScreen extends StatelessWidget {
             title: 'Import Anki deck',
             subtitle: 'An .apkg file with images and audio',
             onTap: () => _importAnkiFile(context),
-          ),
-          const SizedBox(height: 12),
-          _ActionCard(
-            icon: Icons.travel_explore_rounded,
-            title: 'Search decks online',
-            subtitle: 'Download shared Anki decks, saved on your device',
-            onTap: () => _searchOnline(context),
           ),
           const SizedBox(height: 24),
           Text(
@@ -204,7 +187,7 @@ class _NewDeckSheet extends StatefulWidget {
 class _NewDeckSheetState extends State<_NewDeckSheet> {
   final _name = TextEditingController();
   int _colorIndex = 0;
-  int _shuffle = 0;
+  String? _pickedIcon; // set by the icon picker
 
   static const List<String> _fallbackIcons = <String>[
     'layers', 'sparkles', 'rocket', 'brain', 'star', 'gem', 'zap', 'compass',
@@ -283,21 +266,30 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                       color: cs.surfaceContainerLow,
                     ),
                     child: Center(
-                      child: DeckIcon(icon: 'lucide:' + icon, size: 40, color: tint),
+                      child: DeckIcon(
+                          icon: _pickedIcon ?? 'lucide:' + icon,
+                          size: 40,
+                          color: tint),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Icon picked from the name. Change it later.',
+                    'Icon suggested from the name. Pick your own.',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
                         ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(() => _shuffle++),
-                    icon: const Icon(Icons.casino_rounded, size: 18),
-                    label: const Text('Shuffle icon'),
+                    onPressed: () async {
+                      final chosen = await showEmojiPickerSheet(context,
+                          current: _pickedIcon ?? 'lucide:' + icon);
+                      if (chosen != null) {
+                        setState(() => _pickedIcon = chosen);
+                      }
+                    },
+                    icon: const Icon(Icons.emoji_emotions_rounded, size: 18),
+                    label: const Text('Choose icon'),
                   ),
                 ],
               ),
@@ -338,8 +330,8 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
               child: FilledButton(
                 onPressed: _valid
                     ? () {
-                        widget.onCreate(
-                            _name.text.trim(), 'lucide:' + icon, _colorIndex);
+                        widget.onCreate(_name.text.trim(),
+                            _pickedIcon ?? 'lucide:' + icon, _colorIndex);
                         Navigator.pop(context);
                       }
                     : null,
