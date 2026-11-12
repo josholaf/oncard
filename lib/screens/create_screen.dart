@@ -5,6 +5,7 @@ import '../services/anki_import.dart';
 import '../data/app_data.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import '../ui/emoji_picker.dart';
 import 'card_editor_screen.dart';
 import 'deck_screen.dart';
 
@@ -188,6 +189,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
   final _name = TextEditingController();
   int _colorIndex = 0;
   String? _pickedIcon; // set by the icon picker
+  static int _shuffle = 0;
 
   static const List<String> _fallbackIcons = <String>[
     'layers', 'sparkles', 'rocket', 'brain', 'star', 'gem', 'zap', 'compass',
@@ -220,7 +222,9 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
     for (var i = 0; i + 1 < _keywords.length; i += 2) {
       if (n.contains(_keywords[i])) return _keywords[i + 1];
     }
-    return _fallbackIcons[_shuffle % _fallbackIcons.length];
+    final idx = _shuffle % _fallbackIcons.length;
+    _shuffle++;
+    return _fallbackIcons[idx];
   }
 
   bool get _valid => _name.text.trim().isNotEmpty;
@@ -267,7 +271,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                     ),
                     child: Center(
                       child: DeckIcon(
-                          icon: _pickedIcon ?? 'lucide:' + icon,
+                          icon: _pickedIcon ?? 'lucide:$icon',
                           size: 40,
                           color: tint),
                     ),
@@ -283,7 +287,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                   TextButton.icon(
                     onPressed: () async {
                       final chosen = await showEmojiPickerSheet(context,
-                          current: _pickedIcon ?? 'lucide:' + icon);
+                          current: _pickedIcon ?? 'lucide:$icon');
                       if (chosen != null) {
                         setState(() => _pickedIcon = chosen);
                       }
@@ -331,7 +335,7 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
                 onPressed: _valid
                     ? () {
                         widget.onCreate(_name.text.trim(),
-                            _pickedIcon ?? 'lucide:' + icon, _colorIndex);
+                            _pickedIcon ?? 'lucide:$icon', _colorIndex);
                         Navigator.pop(context);
                       }
                     : null,
@@ -344,4 +348,3 @@ class _NewDeckSheetState extends State<_NewDeckSheet> {
     );
   }
 }
-
