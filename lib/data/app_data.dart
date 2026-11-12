@@ -21,6 +21,9 @@ class AppData extends ChangeNotifier {
   String lastStudyDay = '';
   int dailyGoal = 20;
   bool ttsEnabled = false;
+
+  /// Library view style, remembered between sessions.
+  bool libraryGrid = false;
   bool onboarded = false;
   String displayName = 'Guest';
   String? photoPath;
@@ -53,6 +56,7 @@ class AppData extends ChangeNotifier {
     lastStudyDay = _prefs.getString('oncard.lastDay') ?? '';
     dailyGoal = _prefs.getInt('oncard.goal') ?? 20;
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
+    libraryGrid = _prefs.getBool('oncard.libraryGrid') ?? false;
     onboarded = _prefs.getBool('onboarded') ?? false;
     displayName = _prefs.getString('oncard.name') ?? 'Guest';
     final savedPhoto = _prefs.getString('oncard.photo');
@@ -112,6 +116,13 @@ class AppData extends ChangeNotifier {
   void setTtsEnabled(bool enabled) {
     ttsEnabled = enabled;
     _prefs.setBool('oncard.tts', enabled);
+    notifyListeners();
+  }
+
+  /// Remembers the library grid/list choice.
+  void setLibraryGrid(bool grid) {
+    libraryGrid = grid;
+    _prefs.setBool('oncard.libraryGrid', grid);
     notifyListeners();
   }
 
