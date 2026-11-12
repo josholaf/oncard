@@ -275,11 +275,12 @@ class StudyHeatmap extends StatelessWidget {
       if (c > maxCount) maxCount = c;
     }
 
-    // Full year at a glance: cell size is derived from the available
-    // width, so every week and month label always fits the card.
+    // The year always spans the full card width, edge to edge, on any
+    // screen. Cell size and gap scale with the width instead of being
+    // clamped, so there is never leftover space or overflow.
     return LayoutBuilder(builder: (context, box) {
-      final per = (box.maxWidth / weeks).clamp(4.0, 16.0).toDouble();
-      final gap = per * 0.22;
+      final per = box.maxWidth / weeks;
+      final gap = per * 0.2;
       final cell = per - gap;
       final columns = <Widget>[];
       final monthSegments = <Widget>[];
@@ -292,10 +293,13 @@ class StudyHeatmap extends StatelessWidget {
           child: Text(_monthShort[runMonth],
               maxLines: 1,
               overflow: TextOverflow.clip,
+              textAlign: TextAlign.left,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(fontSize: 9, color: cs.onSurfaceVariant)),
+                  ?.copyWith(
+                      fontSize: (per * 1.4).clamp(8.0, 11.0),
+                      color: cs.onSurfaceVariant)),
         ));
       }
       for (var w = 0; w < weeks; w++) {
@@ -312,7 +316,6 @@ class StudyHeatmap extends StatelessWidget {
           cells.add(Container(
             width: cell,
             height: cell,
-            margin: EdgeInsets.symmetric(horizontal: gap / 2, vertical: gap / 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(cell * 0.3),
               color: level == 0
@@ -321,7 +324,7 @@ class StudyHeatmap extends StatelessWidget {
             ),
           ));
         }
-        columns.add(Column(children: cells));
+        columns.add(Expanded(child: Column(children: cells)));
 
         final month = firstDay.add(Duration(days: w * 7)).month;
         if (month != runMonth) {
