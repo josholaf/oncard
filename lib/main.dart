@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,7 +36,6 @@ class _OncardAppState extends State<OncardApp> {
   @override
   void initState() {
     super.initState();
-    // Keep the Android home-screen widget in sync with study data.
     _data.addListener(_syncHomeWidget);
     unawaited(updateHomeWidget(_data));
   }
@@ -81,15 +81,67 @@ class RootShell extends StatefulWidget {
   State<RootShell> createState() => _RootShellState();
 }
 
-class _RootShellState extends State<RootShell> {
+class _RootShellState extends State<RootShell> with WidgetsBindingObserver {
   int _index = 0;
+  bool _quickAddOpen = false;
+  static const _channel = MethodChannel('oncard/share');
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeOpenQuickAdd(context);
+    WidgetsBinding.instance.addObserver(this);
+    // Native pushes when PROCESS_TEXT / Share arrives while app is alive.
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onSelectedText') {
+        final text = call.arguments as String?;
+        if (text != null && text.trim().isNotEmpty && mounted) {
+          await _openQuickAdd(text.trim());
+        }
+      }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_pollSelectedText());
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _channel.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When returning from another app after "Share to Oncard" / PROCESS_TEXT.
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_pollSelectedText());
+    }
+  }
+
+  Future<void> _pollSelectedText() async {
+    try {
+      final text = await _channel.invokeMethod<String>('getSelectedText');
+      if (text != null && text.trim().isNotEmpty && mounted) {
+        await _openQuickAdd(text.trim());
+      }
+    } catch (_) {
+      // Not Android or channel or channel not wired.
+    }
+  }
+
+  Future<void> _openQuickAdd(String text) async {
+    if (_quickAddOpen || !mounted) return;
+    _quickAddOpen = true;
+    try {
+      await Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          builder: (_) => QuickAddScreen(selectedText: text),
+        ),
+      );
+    } finally {
+      _quickAddOpen = false;
+    }
   }
 
   @override
@@ -107,7 +159,6 @@ class _RootShellState extends State<RootShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          // Filled rounded silhouettes, matching the reference set.
           NavigationDestination(
               icon: Icon(Icons.home_rounded),
               selectedIcon: Icon(Icons.home_rounded),

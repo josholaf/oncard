@@ -1,32 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../data/app_data.dart';
 import '../data/models.dart';
 
-/// Asks Android for text the user selected in another app (the
-/// PROCESS_TEXT flow). If any is pending, opens the quick-add screen.
-/// Silently does nothing on other platforms or when nothing is pending.
-Future<void> maybeOpenQuickAdd(BuildContext context) async {
-  String? text;
-  try {
-    const channel = MethodChannel('oncard/share');
-    text = await channel.invokeMethod<String>('getSelectedText');
-  } catch (_) {
-    return; // Not on Android, or the channel is not wired up.
-  }
-  if (text == null || text.trim().isEmpty) return;
-  if (!context.mounted) return;
-  await Navigator.of(context, rootNavigator: true).push(
-    MaterialPageRoute<void>(
-        builder: (_) => QuickAddScreen(selectedText: text!)),
-  );
-}
-
 /// Lets the user turn text selected in any other app into a flashcard.
 /// The selected text lands in the Front field; the user picks a deck,
-/// edits, and saves.
+/// fills the back (optional), and saves.
 class QuickAddScreen extends StatefulWidget {
   final String selectedText;
   const QuickAddScreen({super.key, required this.selectedText});
@@ -51,82 +31,94 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
-    final deckId = _deckId ??
-        (data.decks.isEmpty ? null : data.decks.first.id);
-    final valid = deckId != null &&
-        _front.text.trim().isNotEmpty &&
-        _back.text.trim().isNotEmpty;
+    final deckId = _deckId ?? (data.decks.isEmpty ? null : data.decks.first.id);
+    final valid = deckId != null && _front.text.trim().isNotEmpty;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add card')),
+      appBar: AppBar(title: const Text('Add card from selection')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'From selected text',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+              'Text from another app. Edit the front, add an answer, pick a deck.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             TextField(
               controller: _front,
-              maxLines: 3,
+              maxLines: 4,
               decoration: const InputDecoration(
-                  labelText: 'Front (question)',
-                  border: OutlineInputBorder()),
+                labelText: 'Front (question)',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _back,
-              maxLines: 3,
+              maxLines: 4,
               decoration: const InputDecoration(
-                  labelText: 'Back (answer)',
-                  border: OutlineInputBorder()),
+                labelText: 'Back (answer)',
+                hintText: 'Optional — you can fill this later',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: deckId,
-              decoration: const InputDecoration(
-                  labelText: 'Deck', border: OutlineInputBorder()),
-              items: [
-                for (final deck in data.decks)
-                  DropdownMenuItem(
-                    value: deck.id,
-                    child: Text(deck.name),
-                  ),
-              ],
-              onChanged: (id) => setState(() => _deckId = id),
-            ),
+            if (data.decks.isEmpty)
+              Text(
+                'Create a deck in the Create tab first, then try again.',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              )
+            else
+              DropdownButtonFormField<String>(
+                value: deckId,
+                decoration: const InputDecoration(
+                  labelText: 'Deck',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  for (final deck in data.decks)
+                    DropdownMenuItem(
+                      value: deck.id,
+                      child: Text(deck.name),
+                    ),
+                ],
+                onChanged: (id) => setState(() => _deckId = id),
+              ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: FilledButton.icon(
                 onPressed: valid
                     ? () {
+                        final answer = _back.text.trim().isEmpty
+                            ? '…'
+                            : _back.text.trim();
                         data.addCard(
-                          deckId,
+                          deckId!,
                           Flashcard(
                             id: uuid.v4(),
                             question: _front.text.trim(),
-                            answer: _back.text.trim(),
+                            answer: answer,
                           ),
                         );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                'Saved to "${data.deckById(deckId)?.name ?? 'deck'}"'),
+                              'Saved to "${data.deckById(deckId)?.name ?? 'deck'}"',
+                            ),
                           ),
                         );
                         Navigator.pop(context);
                       }
                     : null,
-                child: const Text('Save card'),
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('Save card'),
               ),
             ),
           ],

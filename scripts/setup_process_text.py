@@ -6,10 +6,9 @@ The repo does not commit android/; CI regenerates it with
 `flutter create --platforms=android --project-name=oncard .` and then
 runs this script. It does three things:
 
-1. Adds a PROCESS_TEXT intent filter to the launch activity so that
-   Oncard shows up in Android's text-selection menu.
-2. Registers a FileProvider so decks can be shared as CSV files
-   through the Android share sheet.
+1. Adds PROCESS_TEXT + ACTION_SEND intent filters so Oncard shows up in
+   Android's text-selection menu and the share sheet.
+2. Registers a FileProvider so decks can be shared as CSV files.
 3. Installs the custom MainActivity that implements both features
    over the 'oncard/share' method channel.
 """
@@ -21,9 +20,6 @@ MANIFEST = 'android/app/src/main/AndroidManifest.xml'
 OVERRIDE = 'android_override/MainActivity.kt'
 FILE_PATHS = 'android/app/src/main/res/xml/file_paths.xml'
 
-# CI regenerates android/ with `flutter create --org dev.josh`, so the
-# Kotlin package folder follows the org. Locate the generated activity
-# instead of hardcoding a path.
 KOTLIN_ROOT = 'android/app/src/main/kotlin'
 _candidates = glob.glob(KOTLIN_ROOT + '/**/MainActivity.kt', recursive=True)
 if not _candidates:
@@ -48,14 +44,29 @@ if 'PROCESS_TEXT' not in manifest:
         '                <action android:name="android.intent.action.PROCESS_TEXT" />\n'
         '                <category android:name="android.intent.category.DEFAULT" />\n'
         '                <data android:mimeType="text/plain" />\n'
+        '            </intent-filter>\n'
+        '            <intent-filter>\n'
+        '                <action android:name="android.intent.action.SEND" />\n'
+        '                <category android:name="android.intent.category.DEFAULT" />\n'
+        '                <data android:mimeType="text/plain" />\n'
         '            </intent-filter>\n            '
     )
-    # The first </activity> in the manifest is the launch activity.
     patched = manifest.replace('</activity>', intent_filter + '</activity>', 1)
     io.open(MANIFEST, 'w', encoding='utf-8').write(patched)
-    print('manifest: PROCESS_TEXT intent filter added')
+    print('manifest: PROCESS_TEXT + SEND intent filters added')
+elif 'ACTION_SEND' not in manifest and 'android.intent.action.SEND' not in manifest:
+    send_filter = (
+        '<intent-filter>\n'
+        '                <action android:name="android.intent.action.SEND" />\n'
+        '                <category android:name="android.intent.category.DEFAULT" />\n'
+        '                <data android:mimeType="text/plain" />\n'
+        '            </intent-filter>\n            '
+    )
+    patched = manifest.replace('</activity>', send_filter + '</activity>', 1)
+    io.open(MANIFEST, 'w', encoding='utf-8').write(patched)
+    print('manifest: SEND intent filter added')
 else:
-    print('manifest: already patched')
+    print('manifest: PROCESS_TEXT/SEND already patched')
 
 manifest = io.open(MANIFEST, encoding='utf-8').read()
 if 'FileProvider' not in manifest:

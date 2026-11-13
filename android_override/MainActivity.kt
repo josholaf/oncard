@@ -9,11 +9,9 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 /**
- * Receives text selected in other apps (Android PROCESS_TEXT intent),
- * keeps the latest selection in a static holder, and hands it to the
- * Flutter side over the 'oncard/share' method channel. Also shares
- * files (CSV exports) through the Android share sheet and plays card
- * audio attachments with a MediaPlayer.
+ * Receives text selected in other apps (PROCESS_TEXT) or shared via the
+ * system share sheet (ACTION_SEND text/plain), keeps the latest selection
+ * in a static holder, and hands it to Flutter over 'oncard/share'.
  */
 class MainActivity : FlutterActivity() {
     companion object {
@@ -22,6 +20,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private var mediaPlayer: MediaPlayer? = null
+    private var channel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,13 +29,29 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         captureSelectedText(intent)
+        // Tell Flutter a new selection arrived while the app was alive.
+        channel?.invokeMethod("onSelectedText", pendingSelectedText)
     }
 
     private fun captureSelectedText(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_PROCESS_TEXT) {
-            val text = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT)
-            if (!text.isNullOrEmpty()) pendingSelectedText = text
+        if (intent == null) return
+        when (intent.action) {
+            Intent.ACTION_PROCESS_TEXT -> {
+                val text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)
+                    ?.toString()
+                    ?.trim()
+                if (!text.isNullOrEmpty()) pendingSelectedText = text
+            }
+            Intent.ACTION_SEND -> {
+                if (intent.type?.startsWith("text/") == true) {
+                    val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
+                        ?.toString()
+                        ?.trim()
+                    if (!text.isNullOrEmpty()) pendingSelectedText = text
+                }
+            }
         }
     }
 
@@ -44,19 +59,19 @@ class MainActivity : FlutterActivity() {
         engine: io.flutter.embedding.engine.FlutterEngine
     ) {
         super.configureFlutterEngine(engine)
-        MethodChannel(engine.dartExecutor.binaryMessenger, "oncard/share")
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "getSelectedText" -> {
-                        result.success(pendingSelectedText)
-                        pendingSelectedText = null
-                    }
-                    "shareFile" -> shareFile(call, result)
-                    "playAudio" -> playAudio(call, result)
-                    "stopAudio" -> stopAudio(result)
-                    else -> result.notImplemented()
+        channel = MethodChannel(engine.dartExecutor.binaryMessenger, "oncard/share")
+        channel?.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getSelectedText" -> {
+                    result.success(pendingSelectedText)
+                    pendingSelectedText = null
                 }
+                "shareFile" -> shareFile(call, result)
+                "playAudio" -> playAudio(call, result)
+                "stopAudio" -> stopAudio(result)
+                else -> result.notImplemented()
             }
+        }
     }
 
     private fun shareFile(
@@ -116,6 +131,7 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         mediaPlayer?.release()
         mediaPlayer = null
+        channel = null
         super.onDestroy()
     }
 }
