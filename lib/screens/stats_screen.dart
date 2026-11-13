@@ -31,13 +31,17 @@ class StatsScreen extends StatelessWidget {
       for (var i = 0; i < 7; i++) reviewedOn(now.subtract(Duration(days: i))),
     ].fold(0, (sum, v) => sum + v);
 
-    final dueTomorrow = data.decks
-        .fold(0, (sum, deck) => sum + deck.cards
-            .where((c) =>
-                !c.mastered &&
-                c.due > now.millisecondsSinceEpoch &&
-                c.due <= now.millisecondsSinceEpoch + 24 * 3600 * 1000)
-            .length);
+    final dueTomorrow = data.decks.fold(
+        0,
+        (sum, deck) =>
+            sum +
+            deck.cards
+                .where((c) =>
+                    !c.mastered &&
+                    c.due > now.millisecondsSinceEpoch &&
+                    c.due <=
+                        now.millisecondsSinceEpoch + 24 * 3600 * 1000)
+                .length);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Statistics')),
@@ -45,72 +49,80 @@ class StatsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           if (weekReviewed > 0) ...[
-            Text('This week',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text('This week', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
                   height: 120,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (var i = 6; i >= 0; i--)
-                      () {
-                        final day = now.subtract(Duration(days: i));
-                        final count = reviewedOn(day);
-                        final maxCount = [
-                          for (var j = 0; j < 7; j++)
-                            reviewedOn(now.subtract(Duration(days: j))),
-                        ].fold(1, (m, v) => v > m ? v : m);
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                if (count > 0)
-                                  Text('$count',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall),
-                                const SizedBox(height: 4),
-                                FractionallySizedBox(
-                                  heightFactor:
-                                      (count / maxCount).clamp(0.04, 1.0).toDouble(),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: cs.primary.withOpacity(
-                                          dayKey(day) == dayKey(now)
-                                              ? 1.0
-                                              : 0.45),
-                                      borderRadius: BorderRadius.circular(6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 6; i >= 0; i--)
+                        () {
+                          final day = now.subtract(Duration(days: i));
+                          final count = reviewedOn(day);
+                          final maxCount = [
+                            for (var j = 0; j < 7; j++)
+                              reviewedOn(now.subtract(Duration(days: j))),
+                          ].fold(1, (m, v) => v > m ? v : m);
+                          return Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (count > 0)
+                                    Text('$count',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall),
+                                  const SizedBox(height: 4),
+                                  FractionallySizedBox(
+                                    heightFactor: (count / maxCount)
+                                        .clamp(0.04, 1.0)
+                                        .toDouble(),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: cs.primary.withOpacity(
+                                            dayKey(day) == dayKey(now)
+                                                ? 1.0
+                                                : 0.45),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  const <String>[
-                                    'M', 'T', 'W', 'T', 'F', 'S', 'S'
-                                  ][day.weekday - 1],
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: cs.onSurfaceVariant),
-                                ),
-                              ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    const <String>[
+                                      'M',
+                                      'T',
+                                      'W',
+                                      'T',
+                                      'F',
+                                      'S',
+                                      'S'
+                                    ][day.weekday - 1],
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: cs.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }(),
-                  ],
+                          );
+                        }(),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 20),
           ],
-          const SizedBox(height: 20),
 
           Row(
             children: [
@@ -149,13 +161,25 @@ class StatsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          Text('Study flashcards',
+          Text('Study activity',
               style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Like GitHub’s graph — fill squares with small daily sessions, not cram days.',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
+          ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: StudyHeatmap(byDate: byDate),
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+              child: StudyHeatmap(
+                byDate: byDate,
+                dailyGoal: data.dailyGoal <= 0 ? 20 : data.dailyGoal,
+                compact: false,
+              ),
             ),
           ),
         ],
@@ -163,4 +187,3 @@ class StatsScreen extends StatelessWidget {
     );
   }
 }
-
