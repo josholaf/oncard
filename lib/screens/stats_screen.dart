@@ -145,7 +145,7 @@ class StatsScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                childchild: StatCard(
+                child: StatCard(
                     icon: Icons.local_fire_department_rounded,
                     value: '${data.streak}',
                     label: 'day streak'),
