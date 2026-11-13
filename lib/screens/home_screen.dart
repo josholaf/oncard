@@ -44,11 +44,34 @@ class HomeScreen extends StatelessWidget {
     final Deck? nextDeck = data.nextDeckToStudy;
     final goalProgress =
         data.dailyGoal == 0 ? 0.0 : data.reviewedToday / data.dailyGoal;
-    // Dark mode: a light lavender card with deep purple text reads
-    // far better than white text on dark purple.
     final dark = Theme.of(context).brightness == Brightness.dark;
     final heroBg = dark ? lightenForDark(cs.primary, 0.22) : cs.primary;
     final heroFg = dark ? const Color(0xFF231243) : cs.onPrimary;
+
+    // One-shot notices after freezes are spent or earned.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      if (data.lastFreezesUsed > 0) {
+        final n = data.lastFreezesUsed;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(n == 1
+                ? 'Streak freeze used — your streak is safe.'
+                : '$n streak freezes used — your streak is safe.'),
+          ),
+        );
+        data.clearFreezeNotices();
+      } else if (data.lastFreezeEarnedAt > 0) {
+        final m = data.lastFreezeEarnedAt;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Day $m streak! You earned a streak freeze (${data.freezes}/$kMaxStreakFreezes).'),
+          ),
+        );
+        data.clearFreezeNotices();
+      }
+    });
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -106,12 +129,10 @@ class HomeScreen extends StatelessWidget {
                 .bodySmall
                 ?.copyWith(color: cs.onSurfaceVariant)),
 
-        // Update bar appears only when a newer release is known.
         const UpdateBar(),
 
         const SizedBox(height: 20),
 
-        // Hero card: workload, goal ring and streak in one glance.
         Card(
           color: heroBg,
           child: Padding(
@@ -123,18 +144,43 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text('Today',
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: heroFg.withOpacity(0.9))),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: heroFg.withOpacity(0.9))),
                     ),
-                    Icon(Icons.local_fire_department_rounded,
+                    const Icon(Icons.local_fire_department_rounded,
                         size: 18, color: Color(0xFFE8B95D)),
                     const SizedBox(width: 4),
                     Text('${data.streak}',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: heroFg)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(color: heroFg)),
+                    if (data.freezes > 0) ...[
+                      const SizedBox(width: 12),
+                      Icon(Icons.ac_unit_rounded,
+                          size: 16, color: heroFg.withOpacity(0.85)),
+                      const SizedBox(width: 2),
+                      Text('${data.freezes}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: heroFg)),
+                    ],
                   ],
                 ),
+                if (data.streakAtRisk && data.streak > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    data.freezes > 0
+                        ? 'No review yet today — a freeze will cover you if needed.'
+                        : 'No review yet today — one card keeps the streak.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: heroFg.withOpacity(0.85),
+                        ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -179,8 +225,7 @@ class HomeScreen extends StatelessWidget {
                                       .textTheme
                                       .labelSmall
                                       ?.copyWith(
-                                          color: heroFg
-                                              .withOpacity(0.75))),
+                                          color: heroFg.withOpacity(0.75))),
                             ],
                           ),
                         ],
@@ -193,8 +238,7 @@ class HomeScreen extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                        backgroundColor: heroFg,
-                        foregroundColor: heroBg),
+                        backgroundColor: heroFg, foregroundColor: heroBg),
                     onPressed: nextDeck == null
                         ? null
                         : () => _openDeck(context, nextDeck),
@@ -211,7 +255,6 @@ class HomeScreen extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // Today at a glance: streak, mastered cards, deck count.
         Row(
           children: [
             Expanded(
@@ -225,19 +268,19 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: StatCard(
-                icon: Icons.school_rounded,
-                value: '${data.learnedTotal}',
-                label: 'mastered',
-                color: const Color(0xFF39845B),
+                icon: Icons.ac_unit_rounded,
+                value: '${data.freezes}',
+                label: 'freezes',
+                color: const Color(0xFF5B8FB9),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: StatCard(
-                icon: Icons.style_rounded,
-                value: '${data.decks.length}',
-                label: 'decks',
-                color: const Color(0xFF6C5AA6),
+                icon: Icons.school_rounded,
+                value: '${data.learnedTotal}',
+                label: 'mastered',
+                color: const Color(0xFF39845B),
               ),
             ),
           ],
@@ -304,7 +347,8 @@ class HomeScreen extends StatelessWidget {
         else
           ...data.decks.map((deck) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _DeckRow(deck: deck, onTap: () => _openDeck(context, deck)),
+                child:
+                    _DeckRow(deck: deck, onTap: () => _openDeck(context, deck)),
               )),
 
         const SizedBox(height: 8),
@@ -313,8 +357,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.format_quote_rounded,
-                    color: cs.onSurfaceVariant),
+                Icon(Icons.format_quote_rounded, color: cs.onSurfaceVariant),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(quote,
@@ -342,18 +385,34 @@ class HomeScreen extends StatelessWidget {
                 ?.copyWith(color: fg)),
         Text(label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: fg.withOpacity(0.9))),
+                fontWeight: FontWeight.w600, color: fg.withOpacity(0.9))),
       ],
     );
   }
 
   static String _weekday(int w) => const <String>[
-        '', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+        '',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
       ][w];
   static String _month(int m) => const <String>[
-        '', 'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        '',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
       ][m];
 }
 
@@ -383,8 +442,7 @@ class _DeckRow extends StatelessWidget {
                     Text(deck.name,
                         style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 6),
-                    Text(
-                        '${deck.cards.length} cards',
+                    Text('${deck.cards.length} cards',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
