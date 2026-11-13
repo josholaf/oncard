@@ -48,6 +48,10 @@ class HomeScreen extends StatelessWidget {
     final heroBg = dark ? lightenForDark(cs.primary, 0.22) : cs.primary;
     final heroFg = dark ? const Color(0xFF231243) : cs.onPrimary;
 
+    final byDate = <String, DayLog>{
+      for (final log in data.history) log.date: log,
+    };
+
     // One-shot notices after freezes are spent or earned.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
@@ -249,6 +253,29 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        Text('Your year', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          'Light squares most days beat a few dark cram days.',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: cs.onSurfaceVariant),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 14, 10, 14),
+            child: StudyHeatmap(
+              byDate: byDate,
+              dailyGoal: data.dailyGoal <= 0 ? 20 : data.dailyGoal,
+              compact: true,
             ),
           ),
         ),
