@@ -27,6 +27,10 @@ class StatsScreen extends StatelessWidget {
     final accuracy =
         totalReviewed == 0 ? 0 : (totalCorrect / totalReviewed * 100).round();
 
+    final weekReviewed = [
+      for (var i = 0; i < 7; i++) reviewedOn(now.subtract(Duration(days: i))),
+    ].fold(0, (sum, v) => sum + v);
+
     final dueTomorrow = data.decks
         .fold(0, (sum, deck) => sum + deck.cards
             .where((c) =>
@@ -40,14 +44,15 @@ class StatsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('This week',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                height: 120,
+          if (weekReviewed > 0) ...[
+            Text('This week',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  height: 120,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -104,7 +109,7 @@ class StatsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          ],
 
           Row(
             children: [

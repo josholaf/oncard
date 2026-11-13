@@ -40,6 +40,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
   late List<double> _occlusions =
       List<double>.from(widget.card?.occlusions ?? const <double>[]);
   String? _audioPath;
+  String? _lastAnswerText;
 
   bool get _isEditing => widget.card != null;
 
@@ -48,10 +49,13 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
     super.initState();
     _imagePath = widget.card?.imagePath;
     _audioPath = widget.card?.audioPath;
+    _lastAnswerText = _answer.text;
+    _answer.addListener(_autoContinueList);
   }
 
   @override
   void dispose() {
+    _answer.removeListener(_autoContinueList);
     _question.dispose();
     _answer.dispose();
     _questionFocus.dispose();
@@ -145,6 +149,46 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
       ),
     );
     if (result != null) setState(() => _occlusions = result);
+  }
+
+  /// Continues lists on Enter: after a line starting with '- ' the new
+  /// line gets '- ' too, after '1. ' it gets '2. ', and so on. Pressing
+  /// Enter on an empty list item removes the marker and exits the list.
+  void _autoContinueList() {
+    final text = _answer.text;
+    final old = _lastAnswerText;
+    _lastAnswerText = text;
+    if (old == null || text.length != old.length + 1) return;
+    var at = 0;
+    while (at < old.length && old[at] == text[at]) at++;
+    if (text[at] != '\n') return;
+
+    final lineStart = old.lastIndexOf('\n', at - 1) + 1;
+    final line = old.substring(lineStart, at);
+    final m = RegExp('^(\\s*)(- |(\\d+)\\. )').firstMatch(line);
+    if (m == null) return;
+    final indent = m.group(1) ?? '';
+    final marker = m.group(2)!;
+    final number = m.group(3);
+
+    // Bare marker on this line: leave the list instead of growing it.
+    if (line.trim() == marker.trim()) {
+      _answer.value = TextEditingValue(
+        text: old.replaceRange(lineStart, at, ''),
+        selection: TextSelection.collapsed(offset: lineStart),
+      );
+      _lastAnswerText = _answer.text;
+      return;
+    }
+
+    final cont = number == null
+        ? indent + '- '
+        : indent + (int.parse(number) + 1).toString() + '. ';
+    _answer.value = TextEditingValue(
+      text: text.replaceRange(at + 1, at + 1, cont),
+      selection: TextSelection.collapsed(offset: at + 1 + cont.length),
+    );
+    _lastAnswerText = _answer.text;
   }
 
   /// Toggles a line prefix (bullet or numbered) on the answer's line.
