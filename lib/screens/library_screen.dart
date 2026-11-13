@@ -21,12 +21,14 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   String _query = '';
-  bool _favoritesOnly = false;
-  _SortBy _sort = _SortBy.recent;
+
+  _SortBy get _sort => _SortBy.values.firstWhere(
+      (e) => e.name == context.read<AppData>().librarySort,
+      orElse: () => _SortBy.recent);
 
   List<Deck> _visible(AppData data) {
     var decks = <Deck>[...data.decks];
-    if (_favoritesOnly) {
+    if (data.libraryFavoritesOnly) {
       decks = decks.where((d) => d.favorite).toList();
     }
     if (_query.isNotEmpty) {
@@ -47,6 +49,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
         decks.sort((a, b) => b.dueCount.compareTo(a.dueCount));
         break;
     }
+    return decks;
+  }
+
+  void _setSort(AppData data, _SortBy sort) => data.setLibrarySort(sort.name);
     return decks;
   }
 
@@ -241,15 +247,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: [
                 FilterChip(
                   label: const Text('Favorites'),
-                  selected: _favoritesOnly,
-                  onSelected: (v) => setState(() => _favoritesOnly = v),
+                  selected: data.libraryFavoritesOnly,
+                  onSelected: (v) => data.setLibraryFavoritesOnly(v),
                 ),
                 const Spacer(),
                 PopupMenuButton<_SortBy>(
                   tooltip: 'Sort',
                   icon: const Icon(Icons.sort_rounded),
                   initialValue: _sort,
-                  onSelected: (v) => setState(() => _sort = v),
+                  onSelected: (v) => _setSort(data, v),
                   itemBuilder: (_) => const [
                     PopupMenuItem(
                         value: _SortBy.name, child: Text('Name')),

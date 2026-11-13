@@ -468,7 +468,7 @@ class _CardEditorScreenState extends State<CardEditorScreen> {
               decoration: const InputDecoration(
                   labelText: 'Tags (comma separated)',
                   border: OutlineInputBorder(),
-                  hintText: 'flutter, basics'),
+                  hintText: 'history, chapter 3'),
             ),
             const SizedBox(height: 16),
 

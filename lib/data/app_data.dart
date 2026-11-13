@@ -24,6 +24,8 @@ class AppData extends ChangeNotifier {
 
   /// Library view style, remembered between sessions.
   bool libraryGrid = false;
+  String librarySort = 'recent';
+  bool libraryFavoritesOnly = false;
   bool onboarded = false;
   String displayName = 'Guest';
   String? photoPath;
@@ -57,6 +59,8 @@ class AppData extends ChangeNotifier {
     dailyGoal = _prefs.getInt('oncard.goal') ?? 20;
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
     libraryGrid = _prefs.getBool('oncard.libraryGrid') ?? false;
+    librarySort = _prefs.getString('oncard.librarySort') ?? 'recent';
+    libraryFavoritesOnly = _prefs.getBool('oncard.libraryFav') ?? false;
     onboarded = _prefs.getBool('onboarded') ?? false;
     displayName = _prefs.getString('oncard.name') ?? 'Guest';
     final savedPhoto = _prefs.getString('oncard.photo');
@@ -123,6 +127,20 @@ class AppData extends ChangeNotifier {
   void setLibraryGrid(bool grid) {
     libraryGrid = grid;
     _prefs.setBool('oncard.libraryGrid', grid);
+    notifyListeners();
+  }
+
+  /// Remembers the library sort order.
+  void setLibrarySort(String sort) {
+    librarySort = sort;
+    _prefs.setString('oncard.librarySort', sort);
+    notifyListeners();
+  }
+
+  /// Remembers the favorites-only filter.
+  void setLibraryFavoritesOnly(bool only) {
+    libraryFavoritesOnly = only;
+    _prefs.setBool('oncard.libraryFav', only);
     notifyListeners();
   }
 
