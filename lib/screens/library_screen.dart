@@ -53,8 +53,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _setSort(AppData data, _SortBy sort) => data.setLibrarySort(sort.name);
-    return decks;
-  }
 
   Future<void> _renameDeck(AppData data, Deck deck) async {
     final controller = TextEditingController(text: deck.name);
