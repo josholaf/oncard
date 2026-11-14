@@ -115,7 +115,6 @@ class AppData extends ChangeNotifier {
         history = <DayLog>[];
       }
     }
-    // Cover any missed days with freezes as soon as the app opens.
     applyPendingFreezes();
     _save();
   }
@@ -135,8 +134,6 @@ class AppData extends ChangeNotifier {
     _prefs.setString('oncard.lastDay', lastStudyDay);
     _prefs.setInt('oncard.freezes', freezes);
   }
-
-  // ---- Preferences ----
 
   void setThemeMode(ThemeMode mode) {
     themeMode = mode;
@@ -175,7 +172,7 @@ class AppData extends ChangeNotifier {
   void setLibraryFavoritesOnly(bool only) {
     libraryFavoritesOnly = only;
     _prefs.setBool('oncard.libraryFav', only);
-    notifyListeners    notifyListeners();
+    notifyListeners();
   }
 
   void completeOnboarding(String name, List<String> selected) {
@@ -218,13 +215,10 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Clears one-shot freeze notices after the UI has shown them.
   void clearFreezeNotices() {
     lastFreezesUsed = 0;
     lastFreezeEarnedAt = 0;
   }
-
-  // ---- Queries ----
 
   Deck? deckById(String id) {
     for (final d in decks) {
@@ -250,8 +244,6 @@ class AppData extends ChangeNotifier {
   int get learnedTotal =>
       decks.fold(0, (sum, deck) => sum + deck.cards.where((c) => c.mastered).length);
 
-  /// True when the user has not studied today and a freeze would be needed
-  /// if the calendar day ends without a review.
   bool get streakAtRisk {
     if (streak <= 0 || lastStudyDay.isEmpty) return false;
     final today = dayKey(DateTime.now());
@@ -277,9 +269,6 @@ class AppData extends ChangeNotifier {
     return sorted.where((d) => d.lastStudied > 0).take(4).toList();
   }
 
-  // ---- Streak freezes ----
-
-  /// Spend freezes to cover calendar gaps since [lastStudyDay].
   int applyPendingFreezes({DateTime? now}) {
     if (lastStudyDay.isEmpty || streak <= 0) return 0;
     final today = now ?? DateTime.now();
@@ -322,8 +311,6 @@ class AppData extends ChangeNotifier {
     }
   }
 
-  // ---- Deck mutations ----
-
   void addDeck(String name, String icon, int colorIndex) {
     decks.add(
         Deck(id: uuid.v4(), name: name, icon: icon, colorIndex: colorIndex));
@@ -355,8 +342,6 @@ class AppData extends ChangeNotifier {
     _save();
     notifyListeners();
   }
-
-  // ---- Card mutations ----
 
   void addCard(String deckId, Flashcard card) {
     deckById(deckId)?.cards.add(card);
@@ -441,8 +426,6 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---- Study ----
-
   void recordReview(String deckId, Flashcard card, Grade grade) {
     Scheduler.review(card, grade);
     final deck = deckById(deckId);
@@ -487,8 +470,6 @@ class AppData extends ChangeNotifier {
     _save();
     notifyListeners();
   }
-
-  // ---- Backup ----
 
   String exportBackup() => jsonEncode(<String, dynamic>{
         'version': 2,
