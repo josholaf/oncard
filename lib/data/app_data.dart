@@ -13,6 +13,22 @@ const uuid = Uuid();
 String dayKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+DateTime? parseDayKey(String key) {
+  final parts = key.split('-');
+  if (parts.length != 3) return null;
+  final y = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  final d = int.tryParse(parts[2]);
+  if (y == null || m == null || d == null) return null;
+  return DateTime(y, m, d);
+}
+
+/// Max freezes a user can hold. Keeps the streak meaningful.
+const int kMaxStreakFreezes = 2;
+
+/// Streak lengths that grant one freeze (if under the cap).
+const List<int> kFreezeMilestones = <int>[7, 30, 100];
+
 class AppData extends ChangeNotifier {
   final SharedPreferences _prefs;
   List<Deck> decks = <Deck>[];
@@ -21,6 +37,15 @@ class AppData extends ChangeNotifier {
   String lastStudyDay = '';
   int dailyGoal = 20;
   bool ttsEnabled = false;
+
+  /// Streak freezes held (0..[kMaxStreakFreezes]). Each covers one missed day.
+  int freezes = 0;
+
+  /// Last freeze used (for a one-shot UI toast); cleared by [clearFreezeUsedNotice].
+  int lastFreezesUsed = 0;
+
+  /// True after a freeze was just earned at a milestone.
+  int lastFreezeEarnedAt = 0;
 
   /// Library view style, remembered between sessions.
   bool libraryGrid = false;
@@ -58,6 +83,7 @@ class AppData extends ChangeNotifier {
     lastStudyDay = _prefs.getString('oncard.lastDay') ?? '';
     dailyGoal = _prefs.getInt('oncard.goal') ?? 20;
     ttsEnabled = _prefs.getBool('oncard.tts') ?? false;
+    freezes = (_prefs.getInt('oncard.freezes') ?? 0).clamp(0, kMaxStreakFreezes);
     libraryGrid = _prefs.getBool('oncard.libraryGrid') ?? false;
     librarySort = _prefs.getString('oncard.librarySort') ?? 'recent';
     libraryFavoritesOnly = _prefs.getBool('oncard.libraryFav') ?? false;
@@ -89,6 +115,7 @@ class AppData extends ChangeNotifier {
         history = <DayLog>[];
       }
     }
+    applyPendingFreezes();
     _save();
   }
 
@@ -97,9 +124,16 @@ class AppData extends ChangeNotifier {
         'oncard.decks', jsonEncode(decks.map((d) => d.toJson()).toList()));
     await _prefs.setString(
         'oncard.history', jsonEncode(history.map((d) => d.toJson()).toList()));
+    await _prefs.setInt('oncard.streak', streak);
+    await _prefs.setString('oncard.lastDay', lastStudyDay);
+    await _prefs.setInt('oncard.freezes', freezes);
   }
 
-  // ---- Preferences ----
+  void _persistStreak() {
+    _prefs.setInt('oncard.streak', streak);
+    _prefs.setString('oncard.lastDay', lastStudyDay);
+    _prefs.setInt('oncard.freezes', freezes);
+  }
 
   void setThemeMode(ThemeMode mode) {
     themeMode = mode;
@@ -123,28 +157,24 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Remembers the library grid/list choice.
   void setLibraryGrid(bool grid) {
     libraryGrid = grid;
     _prefs.setBool('oncard.libraryGrid', grid);
     notifyListeners();
   }
 
-  /// Remembers the library sort order.
   void setLibrarySort(String sort) {
     librarySort = sort;
     _prefs.setString('oncard.librarySort', sort);
     notifyListeners();
   }
 
-  /// Remembers the favorites-only filter.
   void setLibraryFavoritesOnly(bool only) {
     libraryFavoritesOnly = only;
     _prefs.setBool('oncard.libraryFav', only);
     notifyListeners();
   }
 
-  /// Finishes onboarding and remembers the chosen profile.
   void completeOnboarding(String name, List<String> selected) {
     displayName = name.isEmpty ? 'Guest' : name;
     interests = selected;
@@ -161,15 +191,12 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Stores the profile photo path. Pass null to remove it.
   void setPhoto(String? path) {
     photoPath = (path == null || path.isEmpty) ? null : path;
     _prefs.setString('oncard.photo', path ?? '');
     notifyListeners();
   }
 
-  /// Guest sign out: resets the profile and replays the onboarding.
-  /// Study data is never touched.
   void signOutGuest() {
     displayName = 'Guest';
     interests = <String>[];
@@ -182,15 +209,16 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Called by the update checker once a newer GitHub release is found.
-  /// Pass nulls to hide the update bar again.
   void setUpdateInfo(String? version, String? url) {
     updateVersion = version;
     updateUrl = url;
     notifyListeners();
   }
 
-  // ---- Queries ----
+  void clearFreezeNotices() {
+    lastFreezesUsed = 0;
+    lastFreezeEarnedAt = 0;
+  }
 
   Deck? deckById(String id) {
     for (final d in decks) {
@@ -216,6 +244,12 @@ class AppData extends ChangeNotifier {
   int get learnedTotal =>
       decks.fold(0, (sum, deck) => sum + deck.cards.where((c) => c.mastered).length);
 
+  bool get streakAtRisk {
+    if (streak <= 0 || lastStudyDay.isEmpty) return false;
+    final today = dayKey(DateTime.now());
+    return lastStudyDay != today;
+  }
+
   Deck? get nextDeckToStudy {
     Deck? best;
     var bestScore = -1;
@@ -235,7 +269,47 @@ class AppData extends ChangeNotifier {
     return sorted.where((d) => d.lastStudied > 0).take(4).toList();
   }
 
-  // ---- Deck mutations ----
+  int applyPendingFreezes({DateTime? now}) {
+    if (lastStudyDay.isEmpty || streak <= 0) return 0;
+    final today = now ?? DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final last = parseDayKey(lastStudyDay);
+    if (last == null) return 0;
+
+    final daysSince = todayDate.difference(last).inDays;
+    if (daysSince <= 1) return 0;
+
+    var missed = daysSince - 1;
+    var used = 0;
+    while (missed > 0 && freezes > 0) {
+      freezes--;
+      used++;
+      missed--;
+    }
+
+    if (used > 0) {
+      lastFreezesUsed = used;
+    }
+
+    if (missed > 0) {
+      streak = 0;
+      lastStudyDay = '';
+    } else {
+      lastStudyDay = dayKey(todayDate.subtract(const Duration(days: 1)));
+    }
+    _persistStreak();
+    return used;
+  }
+
+  void _maybeEarnFreeze(int previousStreak, int newStreak) {
+    for (final m in kFreezeMilestones) {
+      if (previousStreak < m && newStreak >= m && freezes < kMaxStreakFreezes) {
+        freezes++;
+        lastFreezeEarnedAt = m;
+        break;
+      }
+    }
+  }
 
   void addDeck(String name, String icon, int colorIndex) {
     decks.add(
@@ -268,8 +342,6 @@ class AppData extends ChangeNotifier {
     _save();
     notifyListeners();
   }
-
-  // ---- Card mutations ----
 
   void addCard(String deckId, Flashcard card) {
     deckById(deckId)?.cards.add(card);
@@ -315,7 +387,6 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Bulk delete used by the card browser.
   void deleteCards(String deckId, List<String> cardIds) {
     final deck = deckById(deckId);
     if (deck == null) return;
@@ -325,7 +396,6 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Moves cards to another deck, keeping all review state.
   void moveCards(String fromDeckId, List<String> cardIds, String toDeckId) {
     final from = deckById(fromDeckId);
     final to = deckById(toDeckId);
@@ -338,7 +408,6 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Adds or removes one tag on many cards at once.
   void editTags(String deckId, List<String> cardIds,
       {required bool add, required String tag}) {
     final deck = deckById(deckId);
@@ -356,8 +425,6 @@ class AppData extends ChangeNotifier {
     _save();
     notifyListeners();
   }
-
-  // ---- Study ----
 
   void recordReview(String deckId, Flashcard card, Grade grade) {
     Scheduler.review(card, grade);
@@ -383,19 +450,26 @@ class AppData extends ChangeNotifier {
     if (correct) log.correct += 1;
 
     if (lastStudyDay != today) {
+      applyPendingFreezes();
+
+      final previous = streak;
       final yesterday =
           dayKey(DateTime.now().subtract(const Duration(days: 1)));
-      streak = lastStudyDay == yesterday ? streak + 1 : 1;
+      if (lastStudyDay == yesterday || lastStudyDay == today) {
+        streak = streak <= 0 ? 1 : streak + 1;
+      } else if (lastStudyDay.isEmpty) {
+        streak = 1;
+      } else {
+        streak = 1;
+      }
       lastStudyDay = today;
-      _prefs.setInt('oncard.streak', streak);
-      _prefs.setString('oncard.lastDay', today);
+      _maybeEarnFreeze(previous, streak);
+      _persistStreak();
     }
 
     _save();
     notifyListeners();
   }
-
-  // ---- Backup ----
 
   String exportBackup() => jsonEncode(<String, dynamic>{
         'version': 2,
@@ -404,6 +478,7 @@ class AppData extends ChangeNotifier {
         'streak': streak,
         'lastStudyDay': lastStudyDay,
         'dailyGoal': dailyGoal,
+        'freezes': freezes,
       });
 
   Future<bool> importBackup(String json) async {
@@ -422,6 +497,8 @@ class AppData extends ChangeNotifier {
       streak = (data['streak'] as int?) ?? streak;
       lastStudyDay = (data['lastStudyDay'] as String?) ?? lastStudyDay;
       dailyGoal = (data['dailyGoal'] as int?) ?? dailyGoal;
+      freezes = ((data['freezes'] as int?) ?? freezes)
+          .clamp(0, kMaxStreakFreezes);
       await _save();
       notifyListeners();
       return true;
@@ -435,6 +512,7 @@ class AppData extends ChangeNotifier {
     history = <DayLog>[];
     streak = 0;
     lastStudyDay = '';
+    freezes = 0;
     _save();
     notifyListeners();
   }
