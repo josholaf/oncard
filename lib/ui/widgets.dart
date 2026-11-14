@@ -67,16 +67,21 @@ class CountBadge extends StatelessWidget {
   }
 }
 
-/// Friendly empty state with icon and hint.
+/// Friendly empty state with icon, title, subtitle and optional action.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  const EmptyState(
-      {super.key,
-      required this.icon,
-      required this.title,
-      required this.subtitle});
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +113,10 @@ class EmptyState extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 20),
+                FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+              ],
             ],
           ),
         ),
@@ -133,7 +142,6 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tint = color ?? cs.primary;
-    // Dark mode: lighten icon colors so they read on dark surfaces.
     final shown = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(tint)
         : tint;
@@ -173,14 +181,11 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// Deck icons may carry a color suffix: 'lucide:book-2@#FF9800'.
-/// These helpers split the icon from its optional color.
 String iconBase(String icon) {
   final at = icon.indexOf('@');
   return at == -1 ? icon : icon.substring(0, at);
 }
 
-/// The color suffix of a deck icon, or null when it has none.
 Color? iconTint(String icon) {
   final at = icon.indexOf('@');
   if (at == -1) return null;
@@ -190,8 +195,6 @@ Color? iconTint(String icon) {
   return value == null ? null : Color(value);
 }
 
-/// Renders a deck icon that is either an emoji character or a
-/// 'lucide:<name>' reference from the Lucide icon set.
 class DeckIcon extends StatelessWidget {
   final String icon;
   final double size;
@@ -209,7 +212,6 @@ class DeckIcon extends StatelessWidget {
   }
 }
 
-/// Deck avatar: just the icon, tinted with the deck color. No circle.
 class DeckAvatar extends StatelessWidget {
   final String icon;
   final int colorIndex;
@@ -221,7 +223,6 @@ class DeckAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final base = iconTint(icon) ??
         deckPalette[colorIndex % deckPalette.length];
-    // Dark mode: lighten deck colors so icons stay high contrast.
     final tint = Theme.of(context).brightness == Brightness.dark
         ? lightenForDark(base)
         : base;
@@ -241,23 +242,75 @@ class DeckAvatar extends StatelessWidget {
 
 /// GitHub-style contribution heatmap of study activity.
 ///
-/// Columns are weeks (most recent on the right), rows are weekdays, cells
-/// are colored in five steps from none to full intensity. Defaults to a
-/// full year, scaled to fit the card width. A Less/More legend sits below.
+/// Designed to look like GitHub's graph so the habit is familiar, but the
+/// copy and levels reward **steady, sustainable** days — not crushing
+/// workload. A full, even row of light/medium squares beats a few black
+/// days of overload.
+///
+/// - Columns = weeks (oldest left, newest right)
+/// - Rows = weekdays Mon–Sun
+/// - Levels use the daily goal as the "comfortable" target so level 4
+///   only appears when you go well past a sustainable day
 class StudyHeatmap extends StatelessWidget {
   final Map<String, DayLog> byDate;
 
-  /// How many week columns to show, counting back from the current week.
+  /// How many week columns to show.
   final int weeks;
 
-  const StudyHeatmap({super.key, required this.byDate, this.weeks = 52});
+  /// Comfortable reviews per day (from settings daily goal). Used so
+  /// color steps map to sustainable load instead of max-in-year spikes.
+  final int dailyGoal;
 
-  static const List<double> _levelOpacity = <double>[0, 0.25, 0.45, 0.7, 1.0];
+  /// Compact = slightly smaller for Home; full = larger for Stats.
+  final bool compact;
+
+  const StudyHeatmap({
+    super.key,
+    required this.byDate,
+    this.weeks = 52,
+    this.dailyGoal = 20,
+    this.compact = false,
+  });
+
+  /// Opacity steps. Level 0 = empty, 1–3 = healthy range, 4 = heavy day.
+  static const List<double> _levelOpacity = <double>[0, 0.28, 0.48, 0.72, 1.0];
 
   static const List<String> _monthShort = <String>[
-    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
   ];
+
+  static const List<String> _weekdayShort = <String>[
+    'Mon',
+    '',
+    'Wed',
+    '',
+    'Fri',
+    '',
+    ''
+  ];
+
+  /// Map review count → 0..4 using daily goal as the "enough" mark.
+  /// Encourages showing up most days at a calm pace rather than grinding.
+  int levelFor(int count, int goal) {
+    if (count <= 0) return 0;
+    final g = goal.clamp(5, 200);
+    if (count < (g * 0.4).ceil()) return 1;
+    if (count < g) return 2;
+    if (count <= (g * 1.4).ceil()) return 3;
+    return 4;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,62 +322,89 @@ class StudyHeatmap extends StatelessWidget {
 
     int countOn(DateTime d) => byDate[dayKey(d)]?.reviewed ?? 0;
 
-    var maxCount = 1;
+    var activeDays = 0;
+    var heavyDays = 0;
     for (var i = 0; i < weeks * 7; i++) {
-      final c = countOn(firstDay.add(Duration(days: i)));
-      if (c > maxCount) maxCount = c;
+      final date = firstDay.add(Duration(days: i));
+      if (date.isAfter(today)) break;
+      final c = countOn(date);
+      if (c > 0) activeDays++;
+      if (levelFor(c, dailyGoal) >= 4) heavyDays++;
     }
 
-    // The year always spans the full card width, edge to edge, on any
-    // screen. Cell size and gap scale with the width instead of being
-    // clamped, so there is never leftover space or overflow.
+    final caption = activeDays == 0
+        ? 'Show up a little each day — green streaks beat cram days.'
+        : heavyDays > activeDays * 0.25
+            ? 'Several heavy days. Smaller daily sessions stick better.'
+            : activeDays >= 20
+                ? 'Steady pace. Consistency beats overload.'
+                : 'Keep the squares lighting up — short sessions count.';
+
     return LayoutBuilder(builder: (context, box) {
-      final per = box.maxWidth / weeks;
-      final gap = per * 0.2;
-      final cell = per - gap;
-      final columns = <Widget>[];
+      const labelW = 28.0;
+      final gridW = (box.maxWidth - labelW).clamp(120.0, 800.0);
+      final per = gridW / weeks;
+      final gap = compact ? per * 0.18 : per * 0.22;
+      final cell = (per - gap).clamp(compact ? 8.0 : 10.0, 18.0);
+      final cellGap = gap.clamp(1.5, 4.0);
+
       final monthSegments = <Widget>[];
       var run = 0;
       var runMonth = -1;
       void flushMonth() {
         if (runMonth == -1) return;
         monthSegments.add(SizedBox(
-          width: run * per,
-          child: Text(_monthShort[runMonth],
-              maxLines: 1,
-              overflow: TextOverflow.clip,
-              textAlign: TextAlign.left,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(
-                      fontSize: (per * 1.4).clamp(8.0, 11.0),
-                      color: cs.onSurfaceVariant)),
+          width: run * (cell + cellGap),
+          child: Text(
+            _monthShort[runMonth],
+            maxLines: 1,
+            overflow: TextOverflow.clip,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: compact ? 9 : 11,
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
         ));
       }
+
+      final weekColumns = <Widget>[];
       for (var w = 0; w < weeks; w++) {
         final cells = <Widget>[];
         for (var d = 0; d < 7; d++) {
           final date = firstDay.add(Duration(days: w * 7 + d));
           final count = countOn(date);
           final isFuture = date.isAfter(today);
-          final level = count == 0 || isFuture
-              ? 0
-              : (((count - 1) / maxCount * 3).round() + 1)
-                  .clamp(1, 4)
-                  .toInt();
-          cells.add(Container(
-            width: cell,
-            height: cell,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(cell * 0.3),
-              color: level == 0
-                  ? cs.surfaceContainerHighest.withOpacity(0.6)
-                  : cs.primary.withOpacity(_levelOpacity[level]),
+          final level = isFuture ? 0 : levelFor(count, dailyGoal);
+          final color = level == 0
+              ? cs.surfaceContainerHighest.withOpacity(0.55)
+              : cs.primary.withOpacity(_levelOpacity[level]);
+
+          final tip = isFuture
+              ? 'Future'
+              : count == 0
+                  ? 'No reviews · ${_fmt(date)}'
+                  : '$count review${count == 1 ? '' : 's'} · ${_fmt(date)}';
+
+          cells.add(Padding(
+            padding: EdgeInsets.all(cellGap / 2),
+            child: Tooltip(
+              message: tip,
+              child: Container(
+                width: cell,
+                height: cell,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(cell * 0.28),
+                  color: color,
+                ),
+              ),
             ),
           ));
         }
-        columns.add(Expanded(child: Column(children: cells)));
+        weekColumns.add(Column(
+          mainAxisSize: MainAxisSize.min,
+          children: cells,
+        ));
 
         final month = firstDay.add(Duration(days: w * 7)).month;
         if (month != runMonth) {
@@ -336,48 +416,118 @@ class StudyHeatmap extends StatelessWidget {
       }
       flushMonth();
 
+      final dayLabels = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var d = 0; d < 7; d++)
+            SizedBox(
+              height: cell + cellGap,
+              width: labelW,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _weekdayShort[d],
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: compact ? 8 : 9,
+                        color: cs.onSurfaceVariant,
+                      ),
+                ),
+              ),
+            ),
+        ],
+      );
+
       return Semantics(
-        label: 'Study activity heatmap for the past $weeks weeks',
+        label:
+            'Study activity heatmap for the past $weeks weeks. $caption',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Padding(
+              padding: const EdgeInsets.only(left: labelW),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: monthSegments),
+                children: monthSegments,
+              ),
+            ),
             const SizedBox(height: 4),
-            Row(children: columns),
-            const SizedBox(height: 8),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Less',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
-                const SizedBox(width: 4),
-                for (final opacity in _levelOpacity)
-                  Container(
-                    width: 10,
-                    height: 10,
-                    margin: const EdgeInsets.only(right: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      color: opacity == 0
-                          ? cs.surfaceContainerHighest.withOpacity(0.6)
-                          : cs.primary.withOpacity(opacity),
+                dayLabels,
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: weekColumns,
                     ),
                   ),
-                const SizedBox(width: 2),
-                Text('More',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(fontSize: 10, color: cs.onSurfaceVariant)),
+                ),
               ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  'Less',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 10,
+                        color: cs.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(width: 6),
+                for (var i = 0; i < _levelOpacity.length; i++)
+                  Container(
+                    width: compact ? 11 : 13,
+                    height: compact ? 11 : 13,
+                    margin: const EdgeInsets.only(right: 3),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: i == 0
+                          ? cs.surfaceContainerHighest.withOpacity(0.55)
+                          : cs.primary.withOpacity(_levelOpacity[i]),
+                    ),
+                  ),
+                Text(
+                  'More',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 10,
+                        color: cs.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              caption,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    height: 1.3,
+                  ),
             ),
           ],
         ),
       );
     });
+  }
+
+  static String _fmt(DateTime d) {
+    const months = <String>[
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[d.month]} ${d.day}';
   }
 }
